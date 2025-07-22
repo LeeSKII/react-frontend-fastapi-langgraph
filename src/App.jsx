@@ -1,13 +1,11 @@
-import { useState } from 'react'
-import LLMStreamPage from "./LLMStreamPage";
+import WebSearch from "./WebSearch";
 
 function App() {
-
   return (
     <>
-      <LLMStreamPage />
+      <WebSearch />
     </>
-  )
+  );
 }
 
-export default App
+export default App;

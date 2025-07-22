@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Bubble, Sender } from "@ant-design/x";
+import markdownit from "markdown-it";
 
 const LLMStreamPage = () => {
   const [query, setQuery] = useState("");
@@ -8,6 +10,17 @@ const LLMStreamPage = () => {
   const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const abortControllerRef = useRef(null);
+
+  const md = markdownit({ html: true, breaks: true });
+
+  const renderMarkdown = (content) => {
+    return (
+      <>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
+        <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
+      </>
+    );
+  };
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
@@ -141,37 +154,24 @@ const LLMStreamPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">LLM Stream Demo</h1>
+    <div className="container mx-auto p-4 max-w-8xl">
+      <h1 className="text-2xl font-bold mb-6">Web Search</h1>
 
       {/* 查询输入区域 */}
       <div className="mb-6">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter your query..."
-            className="flex-1 p-2 border rounded"
-            disabled={isStreaming}
-          />
-
-          {isStreaming ? (
-            <button
-              onClick={stopStream}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              onClick={startStream}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Start Stream
-            </button>
-          )}
-        </div>
+        <Sender
+          submitType="shiftEnter"
+          value={query}
+          onChange={(value) => setQuery(value)}
+          placeholder="Press Shift + Enter to send message"
+          loading={isStreaming}
+          onSubmit={() => {
+            startStream();
+          }}
+          onCancel={() => {
+            stopStream();
+          }}
+        />
 
         {error && (
           <div className="mt-2 text-red-500 bg-red-50 p-2 rounded">
@@ -183,6 +183,11 @@ const LLMStreamPage = () => {
       {/* 临时流式消息区域 */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
+        <Bubble
+          content={streamMessage}
+          messageRender={renderMarkdown}
+          // avatar={{ icon: <UserOutlined /> }}
+        />
         <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
           {streamMessage ? (
             <p className="text-gray-500">{streamMessage}</p>
