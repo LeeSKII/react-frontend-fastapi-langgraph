@@ -260,13 +260,33 @@ const LLMStreamPage = () => {
                       </div>
                       {step.node === "analyze_need_web_search" && (
                         <div className="flex flex-wrap gap-4 mt-2">
-                          <RenderMarkdown content={JSON.stringify(step.data)} />
+                          <RenderMarkdown
+                            content={JSON.stringify({
+                              query: step.data.query,
+                              isNeedWebSearch: step.data.isNeedWebSearch,
+                              reason: step.data.reason,
+                              confidence: step.data.confidence,
+                            })}
+                          />
+                        </div>
+                      )}
+                      {/* generate_search_query 节点 */}
+                      {step.node === "generate_search_query" && (
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <RenderMarkdown
+                            content={JSON.stringify({
+                              web_search_query: step.data.web_search_query,
+                              web_search_depth: step.data.web_search_depth,
+                              reason: step.data.reason,
+                              confidence: step.data.confidence,
+                            })}
+                          />
                         </div>
                       )}
                       {/* web_search 节点 */}
                       {step.node === "web_search" && (
                         <div className="flex flex-wrap gap-4 mt-2">
-                          {step.data.web_search.map((search_data) => (
+                          {step.data.web_search_results.map((search_data) => (
                             <div className="w-[calc(20%-1rem)]">
                               <WebSearchCard
                                 key={search_data.url}
@@ -278,6 +298,7 @@ const LLMStreamPage = () => {
                           ))}
                         </div>
                       )}
+
                       {step.node === "assistant" && (
                         <div className="font-mono h-20 overflow-y-auto">
                           {JSON.stringify(step.data)}
