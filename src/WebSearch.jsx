@@ -199,6 +199,7 @@ const LLMStreamPage = () => {
 
   return (
     <div className="container mx-auto p-4 h-screen flex flex-col">
+      {/* Header区域 */}
       <header className="h-1/12">
         <h1 className="text-2xl font-bold mb-6">Web Search</h1>
         <div className="mb-6">
@@ -209,10 +210,10 @@ const LLMStreamPage = () => {
           )}
         </div>
       </header>
+      {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-6 h-10/12">
-        {/* 搜索结果展示区域 */}
         <div className="flex-2 w-2/3 h-full overflow-y-auto">
-          {/* 临时流式消息区域 */}
+          {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
 
@@ -257,6 +258,12 @@ const LLMStreamPage = () => {
                         <span>Step:</span>
                         <span className="font-bold">{step.node}</span>
                       </div>
+                      {step.node === "analyze_need_web_search" && (
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <RenderMarkdown content={JSON.stringify(step.data)} />
+                        </div>
+                      )}
+                      {/* web_search 节点 */}
                       {step.node === "web_search" && (
                         <div className="flex flex-wrap gap-4 mt-2">
                           {step.data.web_search.map((search_data) => (
