@@ -29,6 +29,24 @@ const rolesAsObject = {
   },
 };
 
+const WebSearchCard = ({ url, title, content }) => {
+  return (
+    <div className="border rounded p-4 mb-4 h-40 overflow-y-auto">
+      <a
+        href={url}
+        className="text-blue-500 hover:underline break-all"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <h4 className="text-lg font-semibold mb-2">{title}</h4>
+      </a>
+      <Typography className="mt-2 text-gray-600">
+        {content.substring(0, 100)}
+      </Typography>
+    </div>
+  );
+};
+
 const LLMStreamPage = () => {
   const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -180,25 +198,12 @@ const LLMStreamPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-8xl">
+    <div
+      className="container mx-auto p-4 max-w-8xl flex flex-col"
+      style={{ height: "calc(100vh - 100px)", overflowY: "auto" }}
+    >
       <h1 className="text-2xl font-bold mb-6">Web Search</h1>
-
-      {/* 查询输入区域 */}
       <div className="mb-6">
-        <Sender
-          submitType="shiftEnter"
-          value={query}
-          onChange={(value) => setQuery(value)}
-          placeholder="Press Shift + Enter to send message"
-          loading={isStreaming}
-          onSubmit={() => {
-            startStream();
-          }}
-          onCancel={() => {
-            stopStream();
-          }}
-        />
-
         {error && (
           <div className="mt-2 text-red-500 bg-red-50 p-2 rounded">
             Error: {error}
@@ -206,23 +211,26 @@ const LLMStreamPage = () => {
         )}
       </div>
 
-      {/* 临时流式消息区域 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
+      {isStreaming && (
+        <>
+          {/* 临时流式消息区域 */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
 
-        <div className="border rounded p-4 bg-gray-50 min-h-[50px]">
-          {streamMessage ? (
-            <RenderMarkdown content={streamMessage} />
-          ) : (
-            <p className="text-gray-500">
-              {isStreaming
-                ? "Waiting for stream message..."
-                : "Stream message will appear here"}
-            </p>
-          )}
-        </div>
-      </div>
-
+            <div className="border rounded p-4 bg-gray-50 min-h-[50px]">
+              {streamMessage ? (
+                <RenderMarkdown content={streamMessage} />
+              ) : (
+                <p className="text-gray-500">
+                  {isStreaming
+                    ? "Waiting for stream message..."
+                    : "Stream message will appear here"}
+                </p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
       {/* 步骤展示区域 */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-3 flex items-center">
@@ -242,17 +250,35 @@ const LLMStreamPage = () => {
                 : "Processing steps will appear here"}
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-wrap gap-4">
               {steps.map((step) => (
                 <div
                   key={step.id}
                   className="p-3 bg-white border-l-4 border-blue-400 shadow-sm"
                 >
-                  <div className="flex justify-between text-sm text-gray-500 mb-1">
+                  <div className="flex gap-2 text-sm text-gray-500 mb-1">
                     <span>Step:</span>
-                    <span>{step.node}</span>
+                    <span className="font-bold">{step.node}</span>
                   </div>
-                  <div className="font-mono">{JSON.stringify(step.data)}</div>
+                  {step.node === "web_search" && (
+                    <div className="flex flex-wrap gap-4 mt-2">
+                      {step.data.web_search.map((search_data) => (
+                        <div className="w-[calc(20%-1rem)]">
+                          <WebSearchCard
+                            key={search_data.url}
+                            url={search_data.url}
+                            title={search_data.title}
+                            content={search_data.content}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {step.node === "assistant" && (
+                    <div className="font-mono h-20 overflow-y-auto">
+                      {JSON.stringify(step.data)}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -265,11 +291,26 @@ const LLMStreamPage = () => {
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
 
         <Bubble.List
-          style={{ maxHeight: 800, paddingInline: 16 }}
           roles={rolesAsObject}
           items={messages.map((message, i) => {
             return { key: i, role: message.role, content: message.content };
           })}
+        />
+      </div>
+      {/* 查询输入区域 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 m-6 h-20 bg-white z-10">
+        <Sender
+          submitType="shiftEnter"
+          value={query}
+          onChange={(value) => setQuery(value)}
+          placeholder="Press Shift + Enter to send message"
+          loading={isStreaming}
+          onSubmit={() => {
+            startStream();
+          }}
+          onCancel={() => {
+            stopStream();
+          }}
         />
       </div>
     </div>
