@@ -1,6 +1,33 @@
 import { useState, useRef, useEffect } from "react";
 import { Bubble, Sender } from "@ant-design/x";
+import { Typography } from "antd";
+import { RobotOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Flex, Switch } from "antd";
 import markdownit from "markdown-it";
+
+const md = markdownit({ html: true, breaks: true });
+
+const rolesAsObject = {
+  assistant: {
+    placement: "start",
+    avatar: { icon: <RobotOutlined />, style: { background: "#1d3acdff" } },
+    style: {
+      maxWidth: 1200,
+    },
+    messageRender: (content) => {
+      return (
+        <Typography>
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
+          <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
+        </Typography>
+      );
+    },
+  },
+  user: {
+    placement: "end",
+    avatar: { icon: <UserOutlined />, style: { background: "#87d068" } },
+  },
+};
 
 const LLMStreamPage = () => {
   const [query, setQuery] = useState("");
@@ -11,14 +38,12 @@ const LLMStreamPage = () => {
   const [messages, setMessages] = useState([]);
   const abortControllerRef = useRef(null);
 
-  const md = markdownit({ html: true, breaks: true });
-
-  const renderMarkdown = (content) => {
+  const RenderMarkdown = ({ content }) => {
     return (
-      <>
+      <Typography>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
         <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
-      </>
+      </Typography>
     );
   };
 
@@ -92,6 +117,7 @@ const LLMStreamPage = () => {
       }
     } finally {
       setIsStreaming(false);
+      setQuery("");
       abortControllerRef.current = null;
     }
   };
@@ -183,14 +209,10 @@ const LLMStreamPage = () => {
       {/* 临时流式消息区域 */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
-        <Bubble
-          content={streamMessage}
-          messageRender={renderMarkdown}
-          // avatar={{ icon: <UserOutlined /> }}
-        />
-        <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
+
+        <div className="border rounded p-4 bg-gray-50 min-h-[50px]">
           {streamMessage ? (
-            <p className="text-gray-500">{streamMessage}</p>
+            <RenderMarkdown content={streamMessage} />
           ) : (
             <p className="text-gray-500">
               {isStreaming
@@ -240,32 +262,15 @@ const LLMStreamPage = () => {
 
       {/* 结果对话展示区域 */}
       <div>
-        <h2 className="text-xl font-semibold mb-3">Results</h2>
+        <h2 className="text-xl font-semibold mb-3">Messages</h2>
 
-        <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
-          {messages.length === 0 ? (
-            <p className="text-gray-500">
-              {isStreaming
-                ? "Waiting for results..."
-                : "Final results will appear here"}
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className="p-4 bg-white rounded-lg shadow"
-                >
-                  <div className="flex justify-between text-sm text-gray-500 mb-2">
-                    <span>Role:</span>
-                    <span>{message.role}</span>
-                  </div>
-                  <div className="mb-3">{message.content}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <Bubble.List
+          style={{ maxHeight: 800, paddingInline: 16 }}
+          roles={rolesAsObject}
+          items={messages.map((message, i) => {
+            return { key: i, role: message.role, content: message.content };
+          })}
+        />
       </div>
     </div>
   );
