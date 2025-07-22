@@ -198,21 +198,20 @@ const LLMStreamPage = () => {
   };
 
   return (
-    <div
-      className="container mx-auto p-4 max-w-8xl flex flex-col"
-      style={{ height: "calc(100vh - 100px)", overflowY: "auto" }}
-    >
-      <h1 className="text-2xl font-bold mb-6">Web Search</h1>
-      <div className="mb-6">
-        {error && (
-          <div className="mt-2 text-red-500 bg-red-50 p-2 rounded">
-            Error: {error}
-          </div>
-        )}
-      </div>
-
-      {isStreaming && (
-        <>
+    <div className="container mx-auto p-4 h-screen flex flex-col">
+      <header className="h-1/12">
+        <h1 className="text-2xl font-bold mb-6">Web Search</h1>
+        <div className="mb-6">
+          {error && (
+            <div className="mt-2 text-red-500 bg-red-50 p-2 rounded">
+              Error: {error}
+            </div>
+          )}
+        </div>
+      </header>
+      <div className="flex flex-row gap-6 h-10/12">
+        {/* 搜索结果展示区域 */}
+        <div className="flex-2 w-2/3 h-full overflow-y-auto">
           {/* 临时流式消息区域 */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
@@ -229,76 +228,73 @@ const LLMStreamPage = () => {
               )}
             </div>
           </div>
-        </>
-      )}
-      {/* 步骤展示区域 */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-3 flex items-center">
-          Processing Steps
-          {isStreaming && (
-            <span className="ml-2 text-sm text-green-500 animate-pulse">
-              (Live)
-            </span>
-          )}
-        </h2>
+          {/* 步骤展示区域 */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-3 flex items-center">
+              Processing Steps
+              {isStreaming && (
+                <span className="ml-2 text-sm text-green-500 animate-pulse">
+                  (Live)
+                </span>
+              )}
+            </h2>
 
-        <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
-          {steps.length === 0 ? (
-            <p className="text-gray-500">
-              {isStreaming
-                ? "Waiting for steps..."
-                : "Processing steps will appear here"}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-4">
-              {steps.map((step) => (
-                <div
-                  key={step.id}
-                  className="p-3 bg-white border-l-4 border-blue-400 shadow-sm"
-                >
-                  <div className="flex gap-2 text-sm text-gray-500 mb-1">
-                    <span>Step:</span>
-                    <span className="font-bold">{step.node}</span>
-                  </div>
-                  {step.node === "web_search" && (
-                    <div className="flex flex-wrap gap-4 mt-2">
-                      {step.data.web_search.map((search_data) => (
-                        <div className="w-[calc(20%-1rem)]">
-                          <WebSearchCard
-                            key={search_data.url}
-                            url={search_data.url}
-                            title={search_data.title}
-                            content={search_data.content}
-                          />
+            <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
+              {steps.length === 0 ? (
+                <p className="text-gray-500">
+                  {isStreaming
+                    ? "Waiting for steps..."
+                    : "Processing steps will appear here"}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  {steps.map((step) => (
+                    <div
+                      key={step.id}
+                      className="p-3 bg-white border-l-4 border-blue-400 shadow-sm"
+                    >
+                      <div className="flex gap-2 text-sm text-gray-500 mb-1">
+                        <span>Step:</span>
+                        <span className="font-bold">{step.node}</span>
+                      </div>
+                      {step.node === "web_search" && (
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          {step.data.web_search.map((search_data) => (
+                            <div className="w-[calc(20%-1rem)]">
+                              <WebSearchCard
+                                key={search_data.url}
+                                url={search_data.url}
+                                title={search_data.title}
+                                content={search_data.content}
+                              />
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                      {step.node === "assistant" && (
+                        <div className="font-mono h-20 overflow-y-auto">
+                          {JSON.stringify(step.data)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {step.node === "assistant" && (
-                    <div className="font-mono h-20 overflow-y-auto">
-                      {JSON.stringify(step.data)}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
+        </div>
+        {/* 结果对话展示区域 */}
+        <div className="flex-1 w-1/3 h-full overflow-y-auto my-6">
+          <Bubble.List
+            roles={rolesAsObject}
+            items={messages.map((message, i) => {
+              return { key: i, role: message.role, content: message.content };
+            })}
+          />
         </div>
       </div>
-
-      {/* 结果对话展示区域 */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Messages</h2>
-
-        <Bubble.List
-          roles={rolesAsObject}
-          items={messages.map((message, i) => {
-            return { key: i, role: message.role, content: message.content };
-          })}
-        />
-      </div>
       {/* 查询输入区域 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 m-6 h-20 bg-white z-10">
+      <div className="flex justify-center items-center w-6xl m-6 h-1/12 bg-white z-10">
         <Sender
           submitType="shiftEnter"
           value={query}
