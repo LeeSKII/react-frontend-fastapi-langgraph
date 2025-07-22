@@ -56,6 +56,8 @@ const LLMStreamPage = () => {
   const [messages, setMessages] = useState([]);
   const abortControllerRef = useRef(null);
 
+  let streamMessageSourceNode = "";
+
   const RenderMarkdown = ({ content }) => {
     return (
       <Typography>
@@ -135,7 +137,9 @@ const LLMStreamPage = () => {
       }
     } finally {
       setIsStreaming(false);
-      setQuery("");
+      if (error == null) {
+        setQuery("");
+      }
       abortControllerRef.current = null;
     }
   };
@@ -171,6 +175,7 @@ const LLMStreamPage = () => {
         const parsed = JSON.parse(data);
 
         if (parsed.mode === "updates") {
+          setStreamMessage((prev) => prev + `\n`);
           setSteps((prev) => [
             ...prev,
             {
@@ -182,7 +187,10 @@ const LLMStreamPage = () => {
           ]);
           if (parsed.data.messages) setMessages(parsed.data.messages);
         } else if (parsed.mode === "messages") {
-          setStreamMessage((prev) => prev + parsed.llm_token.data.content);
+          streamMessageSourceNode = parsed.metadata.langgraph_node;
+          setStreamMessage((prev) => {
+            return prev + parsed.llm_token.data.content;
+          });
         }
       } catch (e) {
         console.error("Failed to parse event data:", e);
@@ -201,14 +209,12 @@ const LLMStreamPage = () => {
     <div className="container mx-auto p-4 h-screen flex flex-col">
       {/* Header区域 */}
       <header className="h-1/12">
-        <h1 className="text-2xl font-bold mb-6">Web Search</h1>
-        <div className="mb-6">
-          {error && (
-            <div className="mt-2 text-red-500 bg-red-50 p-2 rounded">
-              Error: {error}
-            </div>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold m-1">Web Search</h1>
+        {error && (
+          <div className="text-xs text-red-500 bg-red-50 p-2 rounded">
+            Error: {error}
+          </div>
+        )}
       </header>
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-6 h-10/12">
@@ -298,7 +304,21 @@ const LLMStreamPage = () => {
                           ))}
                         </div>
                       )}
-
+                      {/* evaluate_search_results 节点 */}
+                      {step.node === "evaluate_search_results" && (
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <RenderMarkdown
+                            content={JSON.stringify({
+                              is_sufficient: step.data.is_sufficient,
+                              followup_search_query:
+                                step.data.followup_search_query,
+                              search_depth: step.data.search_depth,
+                              reason: step.data.reason,
+                              confidence: step.data.confidence,
+                            })}
+                          />
+                        </div>
+                      )}
                       {step.node === "assistant" && (
                         <div className="font-mono h-20 overflow-y-auto">
                           {JSON.stringify(step.data)}
