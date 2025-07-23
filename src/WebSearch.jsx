@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { Bubble, Sender } from "@ant-design/x";
 import { Typography } from "antd";
 import { RobotOutlined, UserOutlined } from "@ant-design/icons";
@@ -6,6 +6,15 @@ import { Button, Flex, Switch } from "antd";
 import markdownit from "markdown-it";
 
 const md = markdownit({ html: true, breaks: true });
+
+const RenderMarkdown = ({ content }) => {
+  return (
+    <Typography>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
+      <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
+    </Typography>
+  );
+};
 
 const rolesAsObject = {
   assistant: {
@@ -15,12 +24,7 @@ const rolesAsObject = {
       maxWidth: 1200,
     },
     messageRender: (content) => {
-      return (
-        <Typography>
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
-          <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
-        </Typography>
-      );
+      return <RenderMarkdown content={content} />;
     },
   },
   user: {
@@ -29,9 +33,9 @@ const rolesAsObject = {
   },
 };
 
-const WebSearchCard = ({ url, title, content }) => {
+const WebSearchCard = memo(({ url, title, content }) => {
   return (
-    <div className="border rounded p-4 mb-4 h-40 overflow-y-auto">
+    <div className="border rounded-lg p-4 mb-4 h-40 overflow-y-auto bg-white shadow">
       <a
         href={url}
         className="text-blue-500 hover:underline break-all"
@@ -45,9 +49,9 @@ const WebSearchCard = ({ url, title, content }) => {
       </Typography>
     </div>
   );
-};
+});
 
-const LLMStreamPage = () => {
+const WebSearch = () => {
   const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
@@ -55,8 +59,7 @@ const LLMStreamPage = () => {
   const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const abortControllerRef = useRef(null);
-
-  let streamMessageSourceNode = "";
+  const streamMessageSourceNodeRef = useRef("");
 
   const RenderMarkdown = ({ content }) => {
     return (
@@ -78,7 +81,7 @@ const LLMStreamPage = () => {
 
   const startStream = async () => {
     if (!query.trim()) {
-      setError("Query cannot be empty");
+      setError("查询不能为空");
       return;
     }
 
@@ -103,7 +106,10 @@ const LLMStreamPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
       if (!response.body) {
@@ -133,18 +139,19 @@ const LLMStreamPage = () => {
       }
     } catch (err) {
       if (err.name !== "AbortError") {
-        setError(err.message || "Streaming failed");
+        console.error("Streaming error:", err);
+        setError(err.message || "流式传输失败");
       }
     } finally {
       setIsStreaming(false);
-      if (error == null) {
+      if (!error) {
         setQuery("");
       }
       abortControllerRef.current = null;
     }
   };
 
-  const processEvent = (eventData) => {
+  const parseEventData = (eventData) => {
     const lines = eventData.split("\n");
     let eventType = "messages";
     let data = null;
@@ -157,14 +164,45 @@ const LLMStreamPage = () => {
       }
     }
 
+    return { eventType, data };
+  };
+
+  const handleErrorEvent = (data) => {
+    try {
+      const errorData = JSON.parse(data);
+      setError(errorData.error || "Unknown error");
+    } catch (e) {
+      setError("Invalid error format");
+    }
+  };
+
+  const handleUpdatesEvent = (parsed) => {
+    setStreamMessage((prev) => prev + `\n`);
+    setSteps((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        node: parsed.node,
+        data: parsed.data,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
+    if (parsed.data.messages) setMessages(parsed.data.messages);
+  };
+
+  const handleMessagesEvent = (parsed) => {
+    streamMessageSourceNodeRef.current = parsed.metadata.langgraph_node;
+    setStreamMessage((prev) => {
+      return prev + parsed.llm_token.data.content;
+    });
+  };
+
+  const processEvent = (eventData) => {
+    const { eventType, data } = parseEventData(eventData);
+
     // 处理不同事件类型
     if (eventType === "error") {
-      try {
-        const errorData = JSON.parse(data);
-        setError(errorData.error || "Unknown error");
-      } catch (e) {
-        setError("Invalid error format");
-      }
+      handleErrorEvent(data);
     } else if (eventType === "end") {
       setIsStreaming(false);
     } else if (data) {
@@ -175,22 +213,9 @@ const LLMStreamPage = () => {
         const parsed = JSON.parse(data);
 
         if (parsed.mode === "updates") {
-          setStreamMessage((prev) => prev + `\n`);
-          setSteps((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              node: parsed.node,
-              data: parsed.data,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ]);
-          if (parsed.data.messages) setMessages(parsed.data.messages);
+          handleUpdatesEvent(parsed);
         } else if (parsed.mode === "messages") {
-          streamMessageSourceNode = parsed.metadata.langgraph_node;
-          setStreamMessage((prev) => {
-            return prev + parsed.llm_token.data.content;
-          });
+          handleMessagesEvent(parsed);
         }
       } catch (e) {
         console.error("Failed to parse event data:", e);
@@ -206,28 +231,30 @@ const LLMStreamPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 h-screen flex flex-col">
+    <div className="container mx-auto p-4 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
-      <header className="h-1/12">
-        <h1 className="text-2xl font-bold m-1">Web Search</h1>
+      <header className="h-1/12 bg-white rounded-lg shadow p-4 mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Web Search</h1>
         {error && (
-          <div className="text-xs text-red-500 bg-red-50 p-2 rounded">
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
             Error: {error}
           </div>
         )}
       </header>
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-6 h-10/12">
-        <div className="flex-2 w-2/3 h-full overflow-y-auto">
+        <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-3">Stream Message</h2>
+            <h2 className="text-xl font-semibold mb-3 text-gray-700">
+              Stream Message
+            </h2>
 
-            <div className="border rounded p-4 bg-gray-50 min-h-[50px]">
+            <div className="border rounded-lg p-4 bg-gray-50 min-h-[50px]">
               {streamMessage ? (
                 <RenderMarkdown content={streamMessage} />
               ) : (
-                <p className="text-gray-500">
+                <p className="text-gray-400">
                   {isStreaming
                     ? "Waiting for stream message..."
                     : "Stream message will appear here"}
@@ -237,7 +264,7 @@ const LLMStreamPage = () => {
           </div>
           {/* 步骤展示区域 */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-3 flex items-center">
+            <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
               Processing Steps
               {isStreaming && (
                 <span className="ml-2 text-sm text-green-500 animate-pulse">
@@ -246,9 +273,9 @@ const LLMStreamPage = () => {
               )}
             </h2>
 
-            <div className="border rounded p-4 bg-gray-50 min-h-[200px]">
+            <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px]">
               {steps.length === 0 ? (
-                <p className="text-gray-500">
+                <p className="text-gray-400">
                   {isStreaming
                     ? "Waiting for steps..."
                     : "Processing steps will appear here"}
@@ -258,11 +285,13 @@ const LLMStreamPage = () => {
                   {steps.map((step) => (
                     <div
                       key={step.id}
-                      className="p-3 bg-white border-l-4 border-blue-400 shadow-sm"
+                      className="p-3 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto"
                     >
-                      <div className="flex gap-2 text-sm text-gray-500 mb-1">
+                      <div className="flex gap-2 text-sm text-gray-600 mb-1">
                         <span>Step:</span>
-                        <span className="font-bold">{step.node}</span>
+                        <span className="font-bold text-gray-800">
+                          {step.node}
+                        </span>
                       </div>
                       {step.node === "analyze_need_web_search" && (
                         <div className="flex flex-wrap gap-4 mt-2">
@@ -332,7 +361,7 @@ const LLMStreamPage = () => {
           </div>
         </div>
         {/* 结果对话展示区域 */}
-        <div className="flex-1 w-1/3 h-full overflow-y-auto my-6">
+        <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           <Bubble.List
             roles={rolesAsObject}
             items={messages.map((message, i) => {
@@ -342,7 +371,7 @@ const LLMStreamPage = () => {
         </div>
       </div>
       {/* 查询输入区域 */}
-      <div className="flex justify-center items-center w-6xl m-6 h-1/12 bg-white z-10">
+      <div className="flex justify-center items-center w-full mt-2 h-1/12 bg-white rounded-lg shadow p-4 z-10">
         <Sender
           submitType="shiftEnter"
           value={query}
@@ -361,4 +390,4 @@ const LLMStreamPage = () => {
   );
 };
 
-export default LLMStreamPage;
+export default WebSearch;
