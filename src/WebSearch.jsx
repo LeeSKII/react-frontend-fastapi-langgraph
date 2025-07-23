@@ -6,8 +6,7 @@ import { Bubble, Sender } from "@ant-design/x";
 import { Typography } from "antd";
 // Ant Design 图标导入
 import { RobotOutlined, UserOutlined } from "@ant-design/icons";
-// 未使用的 Ant Design 组件导入（可以考虑移除）
-import { Button, Flex, Switch } from "antd";
+// 移除未使用的 Ant Design 组件导入
 // Markdown 解析库导入
 import markdownit from "markdown-it";
 
@@ -44,14 +43,16 @@ const rolesAsObject = {
 // 搜索结果卡片组件
 const WebSearchCard = memo(({ url, title, content }) => {
   return (
-    <div className="border rounded-lg p-4 mb-4 h-40 overflow-y-auto bg-white shadow">
+    <div className="border rounded-lg p-4 mb-4 h-40 overflow-y-auto bg-white shadow hover:shadow-md transition-shadow duration-200">
       <a
         href={url}
-        className="text-blue-500 hover:underline break-all"
+        className="text-blue-600 hover:underline break-all"
         target="_blank"
         rel="noopener noreferrer"
       >
-        <h4 className="text-lg font-semibold mb-2">{title}</h4>
+        <h4 className="text-lg font-semibold mb-2 hover:text-blue-700 transition-colors duration-200">
+          {title}
+        </h4>
       </a>
       <Typography className="mt-2 text-gray-600">
         {content.substring(0, 100)}
@@ -70,7 +71,6 @@ const WebSearch = () => {
   const [messages, setMessages] = useState([]);
   const abortControllerRef = useRef(null);
   const streamMessageSourceNodeRef = useRef("");
-
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
     return () => {
@@ -250,7 +250,7 @@ const WebSearch = () => {
         )}
       </header>
       {/* 搜索结果展示区域 */}
-      <div className="flex flex-row gap-6 h-10/12">
+      <div className="flex flex-row gap-8 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
@@ -263,10 +263,8 @@ const WebSearch = () => {
                 {streamMessage ? (
                   <RenderMarkdown content={streamMessage} />
                 ) : (
-                  <p className="text-gray-400">
-                    {isStreaming
-                      ? "Waiting for stream message..."
-                      : "Stream message will appear here"}
+                  <p className="text-gray-500 italic">
+                    {isStreaming ? "等待流式消息..." : "搜索结果将显示在这里"}
                   </p>
                 )}
               </div>
@@ -287,10 +285,8 @@ const WebSearch = () => {
 
               <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px]">
                 {steps.length === 0 ? (
-                  <p className="text-gray-400">
-                    {isStreaming
-                      ? "Waiting for steps..."
-                      : "Processing steps will appear here"}
+                  <p className="text-gray-500 italic">
+                    {isStreaming ? "正在处理步骤..." : "处理步骤将显示在这里"}
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-4">
@@ -335,12 +331,13 @@ const WebSearch = () => {
                         {step.node === "web_search" && (
                           <div className="flex flex-wrap gap-4 mt-2">
                             {step.data.web_search_results.map((search_data) => (
-                              <div className="w-[calc(20%-1rem)]">
+                              <div className="w-[calc(20%-1rem)] p-2">
                                 <WebSearchCard
                                   key={search_data.url}
                                   url={search_data.url}
                                   title={search_data.title}
                                   content={search_data.content}
+                                  snippet={search_data.snippet}
                                 />
                               </div>
                             ))}
@@ -376,7 +373,7 @@ const WebSearch = () => {
           )}
         </div>
         {/* 结果对话展示区域 */}
-        <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
+        <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-6">
           <Bubble.List
             roles={rolesAsObject}
             items={messages.map((message, i) => {
@@ -391,7 +388,7 @@ const WebSearch = () => {
           submitType="shiftEnter"
           value={query}
           onChange={(value) => setQuery(value)}
-          placeholder="Press Shift + Enter to send message"
+          placeholder="按 Shift + Enter 发送消息"
           loading={isStreaming}
           onSubmit={() => {
             startStream();
