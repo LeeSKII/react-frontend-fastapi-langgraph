@@ -1,12 +1,20 @@
+// React 核心库导入
 import { useState, useRef, useEffect, memo } from "react";
+// Ant Design X 组件导入
 import { Bubble, Sender } from "@ant-design/x";
+// Ant Design 组件导入
 import { Typography } from "antd";
+// Ant Design 图标导入
 import { RobotOutlined, UserOutlined } from "@ant-design/icons";
+// 未使用的 Ant Design 组件导入（可以考虑移除）
 import { Button, Flex, Switch } from "antd";
+// Markdown 解析库导入
 import markdownit from "markdown-it";
 
+// 初始化 Markdown 解析器，支持 HTML 和换行
 const md = markdownit({ html: true, breaks: true });
 
+// 渲染 Markdown 内容的组件
 const RenderMarkdown = ({ content }) => {
   return (
     <Typography>
@@ -15,7 +23,7 @@ const RenderMarkdown = ({ content }) => {
     </Typography>
   );
 };
-
+// 定义聊天角色的配置对象
 const rolesAsObject = {
   assistant: {
     placement: "start",
@@ -33,6 +41,7 @@ const rolesAsObject = {
   },
 };
 
+// 搜索结果卡片组件
 const WebSearchCard = memo(({ url, title, content }) => {
   return (
     <div className="border rounded-lg p-4 mb-4 h-40 overflow-y-auto bg-white shadow">
@@ -51,6 +60,7 @@ const WebSearchCard = memo(({ url, title, content }) => {
   );
 });
 
+// Web 搜索主组件
 const WebSearch = () => {
   const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -61,15 +71,6 @@ const WebSearch = () => {
   const abortControllerRef = useRef(null);
   const streamMessageSourceNodeRef = useRef("");
 
-  const RenderMarkdown = ({ content }) => {
-    return (
-      <Typography>
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: used in demo */}
-        <div dangerouslySetInnerHTML={{ __html: md.render(content) }} />
-      </Typography>
-    );
-  };
-
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
     return () => {
@@ -79,6 +80,7 @@ const WebSearch = () => {
     };
   }, []);
 
+  // 开始流式传输函数
   const startStream = async () => {
     if (!query.trim()) {
       setError("查询不能为空");
@@ -151,6 +153,7 @@ const WebSearch = () => {
     }
   };
 
+  // 解析事件数据函数
   const parseEventData = (eventData) => {
     const lines = eventData.split("\n");
     let eventType = "messages";
@@ -167,6 +170,7 @@ const WebSearch = () => {
     return { eventType, data };
   };
 
+  // 处理错误事件函数
   const handleErrorEvent = (data) => {
     try {
       const errorData = JSON.parse(data);
@@ -176,6 +180,7 @@ const WebSearch = () => {
     }
   };
 
+  // 处理更新事件函数
   const handleUpdatesEvent = (parsed) => {
     setStreamMessage((prev) => prev + `\n`);
     setSteps((prev) => [
@@ -190,13 +195,15 @@ const WebSearch = () => {
     if (parsed.data.messages) setMessages(parsed.data.messages);
   };
 
+  // 处理消息事件函数
   const handleMessagesEvent = (parsed) => {
-    streamMessageSourceNodeRef.current = parsed.metadata.langgraph_node;
+    streamMessageSourceNodeRef.current = parsed.node;
     setStreamMessage((prev) => {
-      return prev + parsed.llm_token.data.content;
+      return prev + parsed.data.data.content;
     });
   };
 
+  // 处理事件函数
   const processEvent = (eventData) => {
     const { eventType, data } = parseEventData(eventData);
 
@@ -223,6 +230,7 @@ const WebSearch = () => {
     }
   };
 
+  // 停止流式传输函数
   const stopStream = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -245,120 +253,127 @@ const WebSearch = () => {
       <div className="flex flex-row gap-6 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-3 text-gray-700">
-              Stream Message
-            </h2>
+          {streamMessage && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-3 text-gray-700">
+                Stream Message
+              </h2>
 
-            <div className="border rounded-lg p-4 bg-gray-50 min-h-[50px]">
-              {streamMessage ? (
-                <RenderMarkdown content={streamMessage} />
-              ) : (
-                <p className="text-gray-400">
-                  {isStreaming
-                    ? "Waiting for stream message..."
-                    : "Stream message will appear here"}
-                </p>
-              )}
+              <div className="border rounded-lg p-4 bg-gray-50 min-h-[50px]">
+                {streamMessage ? (
+                  <RenderMarkdown content={streamMessage} />
+                ) : (
+                  <p className="text-gray-400">
+                    {isStreaming
+                      ? "Waiting for stream message..."
+                      : "Stream message will appear here"}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
           {/* 步骤展示区域 */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
-              Processing Steps
-              {isStreaming && (
-                <span className="ml-2 text-sm text-green-500 animate-pulse">
-                  (Live)
-                </span>
-              )}
-            </h2>
+          {steps.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                Processing Steps
+                {isStreaming && (
+                  <span className="ml-2 text-sm text-green-500 animate-pulse">
+                    (Live)
+                  </span>
+                )}
+              </h2>
 
-            <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px]">
-              {steps.length === 0 ? (
-                <p className="text-gray-400">
-                  {isStreaming
-                    ? "Waiting for steps..."
-                    : "Processing steps will appear here"}
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  {steps.map((step) => (
-                    <div
-                      key={step.id}
-                      className="p-3 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto"
-                    >
-                      <div className="flex gap-2 text-sm text-gray-600 mb-1">
-                        <span>Step:</span>
-                        <span className="font-bold text-gray-800">
-                          {step.node}
-                        </span>
+              <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px]">
+                {steps.length === 0 ? (
+                  <p className="text-gray-400">
+                    {isStreaming
+                      ? "Waiting for steps..."
+                      : "Processing steps will appear here"}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-4">
+                    {/* 遍历并渲染每个步骤 */}
+                    {steps.map((step) => (
+                      <div
+                        key={step.id}
+                        className="p-3 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto"
+                      >
+                        <div className="flex gap-2 text-sm text-gray-600 mb-1">
+                          <span>Step:</span>
+                          <span className="font-bold text-gray-800">
+                            {step.node}
+                          </span>
+                        </div>
+                        {step.node === "analyze_need_web_search" && (
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            <RenderMarkdown
+                              content={JSON.stringify({
+                                query: step.data.query,
+                                isNeedWebSearch: step.data.isNeedWebSearch,
+                                reason: step.data.reason,
+                                confidence: step.data.confidence,
+                              })}
+                            />
+                          </div>
+                        )}
+                        {/* generate_search_query 节点 */}
+                        {step.node === "generate_search_query" && (
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            <RenderMarkdown
+                              content={JSON.stringify({
+                                web_search_query: step.data.web_search_query,
+                                web_search_depth: step.data.web_search_depth,
+                                reason: step.data.reason,
+                                confidence: step.data.confidence,
+                              })}
+                            />
+                          </div>
+                        )}
+                        {/* web_search 节点 */}
+                        {step.node === "web_search" && (
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            {step.data.web_search_results.map((search_data) => (
+                              <div className="w-[calc(20%-1rem)]">
+                                <WebSearchCard
+                                  key={search_data.url}
+                                  url={search_data.url}
+                                  title={search_data.title}
+                                  content={search_data.content}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* evaluate_search_results 节点 */}
+                        {step.node === "evaluate_search_results" && (
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            <RenderMarkdown
+                              content={JSON.stringify({
+                                is_sufficient: step.data.is_sufficient,
+                                followup_search_query:
+                                  step.data.followup_search_query,
+                                search_depth: step.data.search_depth,
+                                reason: step.data.reason,
+                                confidence: step.data.confidence,
+                              })}
+                            />
+                          </div>
+                        )}
+                        {/* assistant 节点 */}
+                        {step.node === "assistant" && (
+                          <div className="font-mono h-20 overflow-y-auto">
+                            {JSON.stringify(step.data)}
+                          </div>
+                        )}
                       </div>
-                      {step.node === "analyze_need_web_search" && (
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          <RenderMarkdown
-                            content={JSON.stringify({
-                              query: step.data.query,
-                              isNeedWebSearch: step.data.isNeedWebSearch,
-                              reason: step.data.reason,
-                              confidence: step.data.confidence,
-                            })}
-                          />
-                        </div>
-                      )}
-                      {/* generate_search_query 节点 */}
-                      {step.node === "generate_search_query" && (
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          <RenderMarkdown
-                            content={JSON.stringify({
-                              web_search_query: step.data.web_search_query,
-                              web_search_depth: step.data.web_search_depth,
-                              reason: step.data.reason,
-                              confidence: step.data.confidence,
-                            })}
-                          />
-                        </div>
-                      )}
-                      {/* web_search 节点 */}
-                      {step.node === "web_search" && (
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          {step.data.web_search_results.map((search_data) => (
-                            <div className="w-[calc(20%-1rem)]">
-                              <WebSearchCard
-                                key={search_data.url}
-                                url={search_data.url}
-                                title={search_data.title}
-                                content={search_data.content}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {/* evaluate_search_results 节点 */}
-                      {step.node === "evaluate_search_results" && (
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          <RenderMarkdown
-                            content={JSON.stringify({
-                              is_sufficient: step.data.is_sufficient,
-                              followup_search_query:
-                                step.data.followup_search_query,
-                              search_depth: step.data.search_depth,
-                              reason: step.data.reason,
-                              confidence: step.data.confidence,
-                            })}
-                          />
-                        </div>
-                      )}
-                      {step.node === "assistant" && (
-                        <div className="font-mono h-20 overflow-y-auto">
-                          {JSON.stringify(step.data)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         {/* 结果对话展示区域 */}
         <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
