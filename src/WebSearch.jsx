@@ -125,7 +125,7 @@ function getThoughtChainContent(step) {
           </div>
         )}
         {/* assistant 节点 */}
-        {step.node === "assistant" && (
+        {step.node === "assistant_node" && (
           <div className="font-mono h-20 overflow-y-auto">
             {JSON.stringify(step.data)}
           </div>
@@ -145,7 +145,6 @@ const WebSearch = () => {
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
   const abortControllerRef = useRef(null);
-  const streamMessageSourceNodeRef = useRef("");
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
@@ -175,7 +174,13 @@ const WebSearch = () => {
     // 重置状态
     setError(null);
     setSteps([]);
-    // setMessages([]);
+    setMessages((prev) => {
+      return [
+        ...prev,
+        { role: "user", content: query },
+        { role: "assistant", content: "开始回答...", status: "loading" },
+      ];
+    });
     setStreamMessage("");
     setIsStreaming(true);
 
@@ -268,50 +273,58 @@ const WebSearch = () => {
   //处理custom数据，目前用来指示节点转换
   const handleCustomEvent = (parsed) => {
     console.log("Custom event from node:", parsed);
-    if (parsed.data.data.status === "running") {
-      setCurrentNode(parsed.node);
-      setSteps((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          node: parsed.data.node,
-          status: "pending",
-        },
-      ]);
+    if (parsed.data.type === "node_execute") {
+      if (parsed.data.data.status === "running") {
+        setCurrentNode(parsed.node);
+        setSteps((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            node: parsed.data.node,
+            status: "pending",
+          },
+        ]);
+      }
+      // 节点从正在执行变成已完成
+      if (parsed.data.data.status === "done") {
+        console.log("Node done:", parsed);
+        setSteps((prev) => {
+          let temp_arr = prev.slice(0, -1);
+          return [
+            ...temp_arr, // 排除最后一个元素
+            {
+              id: Date.now(),
+              node: parsed.node,
+              data: parsed.data.data.data,
+              status: "success",
+            },
+          ];
+        });
+      }
     }
-    // 节点从正在执行变成已完成
-    if (parsed.data.data.status === "done") {
-      setSteps((prev) => {
-        prev.pop();
-        return prev;
-      });
-    }
+
     // 节点有流式消息传输
     if (
-      parsed.data.data.hasStreamMessage &&
+      parsed.data.type === "update_stream_messages" &&
       parsed.data.data.status === "running"
     ) {
       setStreamMessage("");
     }
+    if (parsed.data.type === "update_messages") {
+      setMessages((prev) => {
+        return [
+          ...prev.slice(0, -1), // 排除最后一个元素
+          parsed.data.data.messages[parsed.data.data.messages.length - 1],
+        ];
+      });
+    }
   };
 
   // 处理更新事件函数
-  const handleUpdatesEvent = (parsed) => {
-    setSteps((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        node: parsed.node,
-        data: parsed.data,
-        status: "success",
-      },
-    ]);
-    if (parsed.data.messages) setMessages(parsed.data.messages);
-  };
+  const handleUpdatesEvent = (parsed) => {};
 
   // 处理消息事件函数
   const handleMessagesEvent = (parsed) => {
-    streamMessageSourceNodeRef.current = parsed.node;
     setStreamMessage((prev) => {
       return prev + parsed.data.data.content;
     });
@@ -428,7 +441,16 @@ const WebSearch = () => {
           <Bubble.List
             roles={rolesAsObject}
             items={messages.map((message, i) => {
-              return { key: i, role: message.role, content: message.content };
+              let loading = false;
+              if (message?.status === "loading") {
+                loading = true;
+              }
+              return {
+                key: i,
+                role: message.role,
+                content: message.content,
+                loading: loading,
+              };
             })}
           />
         </div>
