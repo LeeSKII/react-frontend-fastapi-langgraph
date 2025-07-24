@@ -383,6 +383,7 @@ const WebSearch = () => {
                     } else {
                       return {
                         title: step.node,
+                        status: step.status,
                         content: getThoughtChainContent(step),
                       };
                     }
