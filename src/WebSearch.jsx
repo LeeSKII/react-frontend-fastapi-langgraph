@@ -348,9 +348,9 @@ const WebSearch = () => {
   return (
     <div className="container mx-auto p-4 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
-      <header className="h-1/12 bg-white rounded-lg shadow p-4 mb-4">
+      <header className="h-1/12 flex flex-col gap-6 bg-white rounded-lg shadow p-4 mb-4">
         <Welcome
-          icon=<ChromeOutlined />
+          icon=<ChromeOutlined className="" />
           title="Deep Search"
           description="Base on Langgraph, fastapi and react"
         />
