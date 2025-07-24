@@ -370,12 +370,14 @@ const WebSearch = () => {
   return (
     <div className="container mx-auto p-2 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
-      <header className="h-1/12 flex flex-col gap-6 bg-white rounded-lg shadow p-2 mb-2">
-        <Welcome
-          icon=<ChromeOutlined className="" />
-          title="Deep Search"
-          description="Base on Langgraph, fastapi and react"
-        />
+      <header className="h-1/12 flex flex-row gap-6 bg-white rounded-lg shadow p-2 mb-2">
+        <div className="flex-1">
+          <Welcome
+            icon=<ChromeOutlined className="" />
+            title="Deep Search"
+            description="Base on Langgraph, fastapi and react"
+          />
+        </div>
         {error && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
             Error: {error}
