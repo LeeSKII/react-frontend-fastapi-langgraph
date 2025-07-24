@@ -64,6 +64,11 @@ const WebSearchCard = memo(({ url, title, content }) => {
 const CollapsiblePanel = ({ title, openStatus, children }) => {
   const [isOpen, setIsOpen] = useState(openStatus);
 
+  //外部属性变化之后触发状态
+  useEffect(() => {
+    setIsOpen(openStatus);
+  }, [openStatus]);
+
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
       <button
