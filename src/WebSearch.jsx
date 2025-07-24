@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, memo } from "react";
 // Ant Design X 组件导入
 import { Bubble, Sender, ThoughtChain, Welcome } from "@ant-design/x";
 // Ant Design 组件导入
-import { Typography, Card } from "antd";
+import { Typography, Card, Button } from "antd";
 // Ant Design 图标导入
 import { RobotOutlined, UserOutlined, ChromeOutlined } from "@ant-design/icons";
 // 移除未使用的 Ant Design 组件导入
@@ -155,6 +155,15 @@ const WebSearch = () => {
       }
     };
   }, []);
+
+  const handleNewSearch = () => {
+    setSteps([]);
+    setMessages([]);
+    setStreamMessage("");
+    setIsStreaming(false);
+    setCurrentNode("");
+    setQuery();
+  };
 
   // 开始流式传输函数
   const startStream = async () => {
@@ -425,7 +434,10 @@ const WebSearch = () => {
         </div>
       </div>
       {/* 查询输入区域 */}
-      <div className="flex justify-center items-center w-full mt-2 h-1/12 bg-white rounded-lg shadow p-4 z-10">
+      <div className="flex flex-row gap-2 justify-center items-center w-full mt-2 h-1/12 bg-white rounded-lg shadow p-4 z-10">
+        <Button type="primary" size="large" onClick={handleNewSearch}>
+          新对话
+        </Button>
         <Sender
           submitType="shiftEnter"
           value={query}
