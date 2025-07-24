@@ -110,7 +110,7 @@ function getThoughtChainContent(step) {
     return <>{step.node} 节点正在执行...</>;
   } else {
     return (
-      <div className="p-3 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto">
+      <div className="p-1 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto">
         {step.node === "analyze_need_web_search" && (
           <div className="flex flex-wrap gap-4 mt-2">
             <RenderMarkdown
@@ -169,7 +169,7 @@ function getThoughtChainContent(step) {
         )}
         {/* assistant 节点 */}
         {step.node === "assistant_node" && (
-          <div className="font-mono h-20 overflow-y-auto">
+          <div className="font-mono max-h-20 overflow-y-auto">
             {JSON.stringify(step.data)}
           </div>
         )}
@@ -415,6 +415,7 @@ const WebSearch = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       setIsStreaming(false);
+      //暂存最后的临时消息
       setMessages((prev) => {
         let temp_arr = prev.slice(0, -1);
         return [...temp_arr, { role: "assistant", content: streamMessage }];
@@ -458,7 +459,7 @@ const WebSearch = () => {
                   items={steps.map((step) => {
                     if (step.status && step.status === "pending") {
                       return {
-                        title: step.node + " 节点正在执行...",
+                        title: step.node + " is running...",
                         status: step.status,
                         content: getThoughtChainContent(step),
                       };
