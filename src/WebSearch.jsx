@@ -188,7 +188,7 @@ const WebSearch = () => {
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
   const abortControllerRef = useRef(null);
-  const [openStatus, setOpenStatus] = useState(true);
+  const [openStatus, setOpenStatus] = useState(false);
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
@@ -224,6 +224,7 @@ const WebSearch = () => {
     // 重置状态
     setError(null);
     setSteps([]);
+    setOpenStatus(true);
     setMessages((prev) => {
       return [
         ...prev,
@@ -414,6 +415,10 @@ const WebSearch = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       setIsStreaming(false);
+      setMessages((prev) => {
+        let temp_arr = prev.slice(0, -1);
+        return [...temp_arr, { role: "assistant", content: streamMessage }];
+      });
     }
   };
 
