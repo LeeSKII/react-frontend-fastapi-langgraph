@@ -1,11 +1,11 @@
 // React 核心库导入
 import { useState, useRef, useEffect, memo } from "react";
 // Ant Design X 组件导入
-import { Bubble, Sender, ThoughtChain } from "@ant-design/x";
+import { Bubble, Sender, ThoughtChain, Welcome } from "@ant-design/x";
 // Ant Design 组件导入
 import { Typography, Card } from "antd";
 // Ant Design 图标导入
-import { RobotOutlined, UserOutlined } from "@ant-design/icons";
+import { RobotOutlined, UserOutlined, ChromeOutlined } from "@ant-design/icons";
 // 移除未使用的 Ant Design 组件导入
 // Markdown 解析库导入
 import markdownit from "markdown-it";
@@ -349,7 +349,11 @@ const WebSearch = () => {
     <div className="container mx-auto p-4 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
       <header className="h-1/12 bg-white rounded-lg shadow p-4 mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Web Search</h1>
+        <Welcome
+          icon=<ChromeOutlined />
+          title="Deep Search"
+          description="Base on Langgraph, fastapi and react"
+        />
         {error && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
             Error: {error}
@@ -361,38 +365,36 @@ const WebSearch = () => {
       <div className="flex flex-row gap-8 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 步骤展示区域 */}
-          <Card>
-            {steps.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
-                  Processing Steps
-                  {isStreaming && (
-                    <span className="ml-2 text-sm text-green-500 animate-pulse">
-                      ({currentNode})
-                    </span>
-                  )}
-                </h2>
-                <ThoughtChain
-                  items={steps.map((step) => {
-                    if (step.status && step.status === "pending") {
-                      return {
-                        title: step.node + " 节点正在执行...",
-                        status: step.status,
-                        content: getThoughtChainContent(step),
-                      };
-                    } else {
-                      return {
-                        title: step.node,
-                        status: step.status,
-                        content: getThoughtChainContent(step),
-                      };
-                    }
-                  })}
-                  collapsible={true}
-                />
-              </>
-            )}
-          </Card>
+          {steps.length > 0 && (
+            <Card>
+              <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                Processing Steps
+                {isStreaming && (
+                  <span className="ml-2 text-sm text-green-500 animate-pulse">
+                    ({currentNode})
+                  </span>
+                )}
+              </h2>
+              <ThoughtChain
+                items={steps.map((step) => {
+                  if (step.status && step.status === "pending") {
+                    return {
+                      title: step.node + " 节点正在执行...",
+                      status: step.status,
+                      content: getThoughtChainContent(step),
+                    };
+                  } else {
+                    return {
+                      title: step.node,
+                      status: step.status,
+                      content: getThoughtChainContent(step),
+                    };
+                  }
+                })}
+                collapsible={true}
+              />
+            </Card>
+          )}
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
             <div className="mb-6">
