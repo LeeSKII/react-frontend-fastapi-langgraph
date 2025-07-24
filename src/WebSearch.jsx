@@ -346,9 +346,9 @@ const WebSearch = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 h-screen flex flex-col bg-gray-100">
+    <div className="container mx-auto p-2 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
-      <header className="h-1/12 flex flex-col gap-6 bg-white rounded-lg shadow p-4 mb-4">
+      <header className="h-1/12 flex flex-col gap-6 bg-white rounded-lg shadow p-2 mb-2">
         <Welcome
           icon=<ChromeOutlined className="" />
           title="Deep Search"
@@ -362,7 +362,7 @@ const WebSearch = () => {
       </header>
 
       {/* 搜索结果展示区域 */}
-      <div className="flex flex-row gap-8 h-10/12">
+      <div className="flex flex-row gap-4 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 步骤展示区域 */}
           {steps.length > 0 && (
