@@ -61,6 +61,44 @@ const WebSearchCard = memo(({ url, title, content }) => {
   );
 });
 
+const CollapsiblePanel = ({ title, openStatus, children }) => {
+  const [isOpen, setIsOpen] = useState(openStatus);
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <button
+        className="w-full px-4 py-3 text-left font-medium flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{title}</span>
+        <svg
+          className={`w-5 h-5 transform transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      <div
+        className={`transition-all duration-200 overflow-hidden ${
+          isOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="p-4 bg-white">{children}</div>
+      </div>
+    </div>
+  );
+};
+
 //设置步骤节点的渲染内容
 function getThoughtChainContent(step) {
   if (step.status === "pending") {
@@ -145,6 +183,7 @@ const WebSearch = () => {
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
   const abortControllerRef = useRef(null);
+  const [openStatus, setOpenStatus] = useState(true);
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
@@ -154,6 +193,12 @@ const WebSearch = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (currentNode === "assistant_node") {
+      setOpenStatus(false);
+    }
+  }, [currentNode]);
 
   const handleNewSearch = () => {
     setSteps([]);
@@ -390,34 +435,35 @@ const WebSearch = () => {
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 步骤展示区域 */}
           {steps.length > 0 && (
-            <Card>
-              <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
-                Processing Steps
-                {isStreaming && (
-                  <span className="ml-2 text-sm text-green-500 animate-pulse">
-                    ({currentNode})
-                  </span>
-                )}
-              </h2>
-              <ThoughtChain
-                items={steps.map((step) => {
-                  if (step.status && step.status === "pending") {
-                    return {
-                      title: step.node + " 节点正在执行...",
-                      status: step.status,
-                      content: getThoughtChainContent(step),
-                    };
-                  } else {
-                    return {
-                      title: step.node,
-                      status: step.status,
-                      content: getThoughtChainContent(step),
-                    };
-                  }
-                })}
-                collapsible={true}
-              />
-            </Card>
+            <CollapsiblePanel title="Process Steps" openStatus={openStatus}>
+              <>
+                <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                  {isStreaming && (
+                    <span className="ml-2 text-sm text-green-500 animate-pulse">
+                      ({currentNode}+" 节点正在执行...")
+                    </span>
+                  )}
+                </h2>
+                <ThoughtChain
+                  items={steps.map((step) => {
+                    if (step.status && step.status === "pending") {
+                      return {
+                        title: step.node + " 节点正在执行...",
+                        status: step.status,
+                        content: getThoughtChainContent(step),
+                      };
+                    } else {
+                      return {
+                        title: step.node,
+                        status: step.status,
+                        content: getThoughtChainContent(step),
+                      };
+                    }
+                  })}
+                  collapsible={true}
+                />
+              </>
+            </CollapsiblePanel>
           )}
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
