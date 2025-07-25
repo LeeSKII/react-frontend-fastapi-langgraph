@@ -211,6 +211,7 @@ const WebSearch = () => {
     setStreamMessage("");
     setIsStreaming(false);
     setCurrentNode("");
+    setError(null);
     setQuery();
   };
 
@@ -428,11 +429,7 @@ const WebSearch = () => {
       {/* Header区域 */}
       <header className="h-1/12 flex flex-row gap-6 bg-white rounded-lg shadow p-2 mb-2">
         <div className="flex-1">
-          <Welcome
-            icon=<ChromeOutlined className="" />
-            title="Deep Search"
-            description="Base on Langgraph, fastapi and react"
-          />
+          <h1 className="text-3xl font-bold">Deep Search</h1>
         </div>
         {error && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
