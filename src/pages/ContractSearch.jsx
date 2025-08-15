@@ -540,7 +540,7 @@ const ContractSearch = () => {
   return (
     <div className="container mx-auto p-2 h-screen flex flex-col bg-gray-100">
       {/* Header区域 */}
-      <header className="h-1/12 flex flex-row gap-6 bg-white rounded-lg shadow p-2 mb-2">
+      <header className="h-1/12 flex flex-row px-3 justify-center items-center gap-6 bg-white rounded-lg shadow mb-2">
         <div className="flex-1">
           <h1 className="text-3xl font-bold">合同搜索</h1>
         </div>
