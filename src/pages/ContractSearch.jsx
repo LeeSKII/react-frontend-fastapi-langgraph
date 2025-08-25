@@ -3,15 +3,17 @@ import { useState, useRef, useEffect, memo } from "react";
 // Ant Design X 组件导入
 import { Bubble, Sender, ThoughtChain, Welcome } from "@ant-design/x";
 // Ant Design 组件导入
-import { Typography, Card, Button, Drawer, List } from "antd";
+import { Typography, Card, Button, Drawer, List, Table, Tag } from "antd";
 // Ant Design 图标导入
 import {
   RobotOutlined,
   UserOutlined,
   ChromeOutlined,
   HistoryOutlined,
+  FileTextOutlined,
+  SearchOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
-// 移除未使用的 Ant Design 组件导入
 // Markdown 解析库导入
 import markdownit from "markdown-it";
 import ReactJson from "react-json-view";
@@ -29,6 +31,7 @@ const RenderMarkdown = ({ content }) => {
     </Typography>
   );
 };
+
 // 定义聊天角色的配置对象
 const rolesAsObject = {
   assistant: {
@@ -48,22 +51,30 @@ const rolesAsObject = {
 };
 
 // 搜索结果卡片组件
-const ContractSearchCard = memo(({ url, title, content }) => {
+const ContractSearchCard = memo(({ contract }) => {
   return (
-    <div className="border rounded-lg p-4 mb-4 h-40 overflow-y-auto bg-white shadow hover:shadow-md transition-shadow duration-200">
-      <a
-        href={url}
-        className="text-blue-600 hover:underline break-all"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <h4 className="text-lg font-semibold mb-2 hover:text-blue-700 transition-colors duration-200">
-          {title}
+    <div className="border rounded-lg p-4 mb-4 overflow-y-auto bg-white shadow hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center mb-2">
+        <FileTextOutlined className="text-blue-500 mr-2" />
+        <h4 className="text-lg font-semibold text-gray-800">
+          {contract.project_name}
         </h4>
-      </a>
-      <Typography className="mt-2 text-gray-600">
-        {content.substring(0, 100)}
+      </div>
+      <div className="mb-2">
+        <Tag color="blue" className="mr-2">
+          合同号: {contract.contact_no}
+        </Tag>
+        <Tag color="green">项目: {contract.project_name}</Tag>
+      </div>
+      <Typography className="text-gray-600">
+        <strong>元数据:</strong> {contract.contract_meta?.substring(0, 200)}...
       </Typography>
+      <div className="mt-2">
+        <Typography className="text-gray-600">
+          <strong>设备列表:</strong>{" "}
+          {contract.equipment_table?.substring(0, 200)}...
+        </Typography>
+      </div>
     </div>
   );
 });
@@ -126,59 +137,95 @@ const JsonRender = memo(({ data }) => {
 
 function renderStep(step) {
   switch (step.node) {
-    case "analyze_need_web_search":
+    case "generate_search_words":
       return (
-        <div className="flex flex-wrap gap-4 mt-2">
-          <JsonRender
-            data={{
-              query: step.data?.query,
-              isNeedContractSearch: step.data?.isNeedContractSearch,
-              reason: step.data?.reason,
-              confidence: step.data?.confidence,
-            }}
-          />
-        </div>
-      );
-    case "generate_search_query":
-      return (
-        <JsonRender
-          data={{
-            web_search_query: step.data?.web_search_query,
-            web_search_depth: step.data?.web_search_depth,
-            reason: step.data?.reason,
-            confidence: step.data?.confidence,
-          }}
-        />
-      );
-    case "web_search":
-      return (
-        <div className="flex flex-wrap gap-4 mt-2">
-          {step.data &&
-            step.data.web_search_results.map((search_data) => (
-              <div className="w-[calc(20%-1rem)] p-2">
-                <ContractSearchCard
-                  key={search_data?.url}
-                  url={search_data?.url}
-                  title={search_data?.title}
-                  content={search_data?.content}
-                  snippet={search_data?.snippet}
-                />
-              </div>
+        <div className="mt-3">
+          <div className="mb-2">
+            <Tag color="blue" icon={<SearchOutlined />}>
+              项目关键词
+            </Tag>
+            {step.data?.project_key_words?.map((word, index) => (
+              <Tag key={index} className="ml-1">
+                {word}
+              </Tag>
             ))}
+          </div>
+          <div>
+            <Tag color="green" icon={<SearchOutlined />}>
+              设备关键词
+            </Tag>
+            {step.data?.equipments_key_words?.map((word, index) => (
+              <Tag key={index} className="ml-1">
+                {word}
+              </Tag>
+            ))}
+          </div>
         </div>
       );
-    case "evaluate_search_results":
+    case "vector_search":
       return (
-        <div className="flex flex-wrap gap-4 mt-2">
-          <JsonRender
-            data={{
-              is_sufficient: step.data?.is_sufficient,
-              followup_search_query: step.data?.followup_search_query,
-              search_depth: step.data?.search_depth,
-              reason: step.data?.reason,
-              confidence: step.data?.confidence,
-            }}
-          />
+        <div className="mt-3">
+          <div className="mb-2">
+            <Tag color="purple" icon={<SearchOutlined />}>
+              向量搜索结果
+            </Tag>
+            <span className="text-sm text-gray-600 ml-2">
+              {step.data?.length} 条合同记录
+            </span>
+          </div>
+          {step.data?.slice(0, 3).map((contract, index) => (
+            <div key={index} className="mb-2">
+              <Tag color="blue">{contract.contact_no}</Tag>
+              <span className="ml-2">{contract.project_name}</span>
+            </div>
+          ))}
+          {step.data?.length > 3 && (
+            <div className="text-gray-500 text-sm">
+              ...等 {step.data.length} 条记录
+            </div>
+          )}
+        </div>
+      );
+    case "keyword_search":
+      return (
+        <div className="mt-3">
+          <div className="mb-2">
+            <Tag color="orange" icon={<SearchOutlined />}>
+              关键词搜索结果
+            </Tag>
+            <span className="text-sm text-gray-600 ml-2">
+              {step.data?.length} 条合同记录
+            </span>
+          </div>
+          {step.data?.slice(0, 3).map((contract, index) => (
+            <div key={index} className="mb-2">
+              <Tag color="blue">{contract.contact_no}</Tag>
+              <span className="ml-2">{contract.project_name}</span>
+            </div>
+          ))}
+          {step.data?.length > 3 && (
+            <div className="text-gray-500 text-sm">
+              ...等 {step.data.length} 条记录
+            </div>
+          )}
+        </div>
+      );
+    case "filter_contracts":
+      return (
+        <div className="mt-3">
+          <div className="mb-2">
+            <Tag color="cyan" icon={<FilterOutlined />}>
+              过滤后合同
+            </Tag>
+            <span className="text-sm text-gray-600 ml-2">
+              {step.data?.length} 条有效合同
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {step.data?.slice(0, 4).map((contract, index) => (
+              <ContractSearchCard key={index} contract={contract} />
+            ))}
+          </div>
         </div>
       );
     default:
@@ -199,7 +246,7 @@ function getThoughtChainContent(step) {
   }
 }
 
-// Web 搜索主组件
+// 合同搜索主组件
 const ContractSearch = () => {
   const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -343,7 +390,7 @@ const ContractSearch = () => {
       return [
         ...prev,
         { role: "user", content: query },
-        { role: "assistant", content: "Researching...", status: "loading" },
+        { role: "assistant", content: "", status: "loading" },
       ];
     });
     setStreamMessage("");
@@ -435,12 +482,12 @@ const ContractSearch = () => {
     }
   };
 
-  //处理custom数据，目前用来指示节点转换
+  // 处理custom数据，目前用来指示节点转换
   const handleCustomEvent = (parsed) => {
     console.log("Custom event from node:", parsed);
     if (parsed.data.type === "node_execute") {
       if (parsed.data.data.status === "running") {
-        setCurrentNode(parsed.node);
+        setCurrentNode(parsed.data.node);
         setSteps((prev) => [
           ...prev,
           {
@@ -459,7 +506,7 @@ const ContractSearch = () => {
             ...temp_arr, // 排除最后一个元素
             {
               id: Date.now(),
-              node: parsed.node,
+              node: parsed.data.node,
               data: parsed.data.data.data,
               status: "success",
             },
@@ -486,12 +533,16 @@ const ContractSearch = () => {
   };
 
   // 处理更新事件函数
-  const handleUpdatesEvent = (parsed) => {};
+  const handleUpdatesEvent = (parsed) => {
+    // 处理更新事件，例如更新搜索状态
+    console.log("Updates event:", parsed);
+  };
 
   // 处理消息事件函数
   const handleMessagesEvent = (parsed) => {
+    // 更新消息内容
     setStreamMessage((prev) => {
-      return prev + parsed.data.data.content;
+      return prev + (parsed.data.data.content || "");
     });
   };
 
@@ -504,6 +555,11 @@ const ContractSearch = () => {
       handleErrorEvent(data);
     } else if (eventType === "end") {
       setIsStreaming(false);
+      // 保存最后的消息
+      setMessages((prev) => {
+        let temp_arr = prev.slice(0, -1);
+        return [...temp_arr, { role: "assistant", content: streamMessage }];
+      });
     } else if (data) {
       // 忽略心跳包
       if (data === ":keep-alive") return;
@@ -534,6 +590,22 @@ const ContractSearch = () => {
         let temp_arr = prev.slice(0, -1);
         return [...temp_arr, { role: "assistant", content: streamMessage }];
       });
+    }
+  };
+
+  // 获取节点图标
+  const getNodeIcon = (nodeName) => {
+    switch (nodeName) {
+      case "generate_search_words":
+        return <SearchOutlined className="text-blue-500" />;
+      case "vector_search":
+        return <FileTextOutlined className="text-purple-500" />;
+      case "keyword_search":
+        return <FileTextOutlined className="text-orange-500" />;
+      case "filter_contracts":
+        return <FilterOutlined className="text-green-500" />;
+      default:
+        return <RobotOutlined />;
     }
   };
 
@@ -615,30 +687,32 @@ const ContractSearch = () => {
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
           {/* 步骤展示区域 */}
           {steps.length > 0 && (
-            <CollapsiblePanel title="Process Steps" openStatus={openStatus}>
+            <CollapsiblePanel title="合同搜索流程" openStatus={openStatus}>
               <>
                 <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
-                  {isStreaming && (
+                  {isStreaming && currentNode && (
                     <span className="ml-2 text-sm text-green-500 animate-pulse">
-                      ({currentNode}+" 节点正在执行...")
+                      {currentNode} 节点正在执行...
                     </span>
                   )}
                 </h2>
                 <ThoughtChain
                   items={steps.map((step) => {
-                    if (step.status && step.status === "pending") {
-                      return {
-                        title: step.node + " is running...",
-                        status: step.status,
-                        content: getThoughtChainContent(step),
-                      };
-                    } else {
-                      return {
-                        title: step.node,
-                        status: step.status,
-                        content: getThoughtChainContent(step),
-                      };
-                    }
+                    return {
+                      title: (
+                        <div className="flex items-center">
+                          {getNodeIcon(step.node)}
+                          <span className="ml-2">{step.node}</span>
+                          {step.status === "pending" && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              (处理中...)
+                            </span>
+                          )}
+                        </div>
+                      ),
+                      status: step.status,
+                      content: getThoughtChainContent(step),
+                    };
                   })}
                   collapsible={true}
                 />
@@ -647,12 +721,12 @@ const ContractSearch = () => {
           )}
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
-            <div>
+            <div className="mt-4">
               <h2 className="text-xl font-semibold mb-3 text-gray-700">
-                实况信息：
+                最终结果：
               </h2>
 
-              <div className="border rounded-lg p-4 bg-gray-50 min-h-[50px]">
+              <div className="border rounded-lg p-4 bg-gray-50 min-h-[100px]">
                 {streamMessage ? (
                   <RenderMarkdown content={streamMessage} />
                 ) : (
@@ -689,7 +763,7 @@ const ContractSearch = () => {
           submitType="shiftEnter"
           value={query}
           onChange={(value) => setQuery(value)}
-          placeholder="按 Shift + Enter 发送消息"
+          placeholder="输入合同查询问题，按 Shift + Enter 发送"
           loading={isStreaming}
           onSubmit={() => {
             startStream();
