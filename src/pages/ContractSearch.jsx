@@ -485,33 +485,28 @@ const ContractSearch = () => {
   // 处理custom数据，目前用来指示节点转换
   const handleCustomEvent = (parsed) => {
     console.log("Custom event from node:", parsed);
-    if (parsed.data.type === "node_execute") {
-      if (parsed.data.data.status === "running") {
-        setCurrentNode(parsed.data.node);
-        setSteps((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            node: parsed.data.node,
-            status: "pending",
-          },
-        ]);
-      }
-      // 节点从正在执行变成已完成
-      if (parsed.data.data.status === "done") {
-        console.log("Node done:", parsed);
-        setSteps((prev) => {
-          let temp_arr = prev.slice(0, -1);
+    if (parsed.node === "generate_response") {
+      // 最后一个节点，回复节点
+      if (parsed.data.type === "final_response") {
+        console.log("更新最后消息：", parsed.data.data.response);
+        setMessages((prev) => {
           return [
-            ...temp_arr, // 排除最后一个元素
-            {
-              id: Date.now(),
-              node: parsed.data.node,
-              data: parsed.data.data.data,
-              status: "success",
-            },
+            ...prev.slice(0, -1), // 排除最后一个元素
+            { role: "assistant", content: parsed.data.data.response },
           ];
         });
+        // setSteps((prev) => {
+        //   let temp_arr = prev.slice(0, -1);
+        //   return [
+        //     ...temp_arr, // 排除最后一个元素
+        //     {
+        //       id: Date.now(),
+        //       node: parsed.data.node,
+        //       data: parsed.data.data.data,
+        //       status: "success",
+        //     },
+        //   ];
+        // });
       }
     }
 
@@ -523,12 +518,6 @@ const ContractSearch = () => {
       setStreamMessage("");
     }
     if (parsed.data.type === "update_messages") {
-      setMessages((prev) => {
-        return [
-          ...prev.slice(0, -1), // 排除最后一个元素
-          parsed.data.data.messages[parsed.data.data.messages.length - 1],
-        ];
-      });
     }
   };
 
@@ -555,11 +544,6 @@ const ContractSearch = () => {
       handleErrorEvent(data);
     } else if (eventType === "end") {
       setIsStreaming(false);
-      // 保存最后的消息
-      setMessages((prev) => {
-        let temp_arr = prev.slice(0, -1);
-        return [...temp_arr, { role: "assistant", content: streamMessage }];
-      });
     } else if (data) {
       // 忽略心跳包
       if (data === ":keep-alive") return;
@@ -685,8 +669,8 @@ const ContractSearch = () => {
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-4 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
-          {/* 步骤展示区域 */}
-          {steps.length > 0 && (
+          {/* 步骤展示区域,暂时不显示 */}
+          {steps.length > 0 && false && (
             <CollapsiblePanel title="合同搜索流程" openStatus={openStatus}>
               <>
                 <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
@@ -722,10 +706,6 @@ const ContractSearch = () => {
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
             <div className="mt-4">
-              <h2 className="text-xl font-semibold mb-3 text-gray-700">
-                最终结果：
-              </h2>
-
               <div className="border rounded-lg p-4 bg-gray-50 min-h-[100px]">
                 {streamMessage ? (
                   <RenderMarkdown content={streamMessage} />
