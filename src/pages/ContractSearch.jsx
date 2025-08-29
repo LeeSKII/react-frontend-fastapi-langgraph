@@ -573,20 +573,122 @@ const ContractSearch = () => {
               return (
                 <div key={i} className="mb-6 p-4 border rounded-lg bg-white shadow-sm">
                   {/* 合同基本信息 */}
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2">合同基本信息</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <span className="font-medium text-gray-700">合同编号：</span>
-                        <span className="text-gray-900">{contractMeta?.buyer_contract_number || 'N/A'}</span>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4">合同基本信息</h3>
+                    
+                    {/* 基本信息 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium mb-2 text-gray-800">基本信息</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <span className="font-medium text-gray-700">买方合同编号：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer_contract_number || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">卖方合同编号：</span>
+                          <span className="text-gray-900">{contractMeta?.seller_contract_number || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">合同类型：</span>
+                          <span className="text-gray-900">{contractMeta?.contract_type || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">项目名称：</span>
+                          <span className="text-gray-900">{contractMeta?.project_name || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">子项目名称：</span>
+                          <span className="text-gray-900">{contractMeta?.sub_project_name || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">签约日期：</span>
+                          <span className="text-gray-900">{contractMeta?.signing_date || 'N/A'}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">项目名称：</span>
-                        <span className="text-gray-900">{contractMeta?.project_name || 'N/A'}</span>
+                    </div>
+                    
+                    {/* 金额信息 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium mb-2 text-gray-800">金额信息</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <span className="font-medium text-gray-700">总金额：</span>
+                          <span className="text-gray-900">{contractMeta?.total_amount || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">总金额（大写）：</span>
+                          <span className="text-gray-900">{contractMeta?.total_amount_str || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">不含税金额：</span>
+                          <span className="text-gray-900">{contractMeta?.tax_excluded_amount || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">税额：</span>
+                          <span className="text-gray-900">{contractMeta?.tax_amount || 'N/A'}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">子项目名称：</span>
-                        <span className="text-gray-900">{contractMeta?.sub_project_name || 'N/A'}</span>
+                    </div>
+                    
+                    {/* 买家信息 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium mb-2 text-gray-800">买家信息</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <span className="font-medium text-gray-700">名称：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.name || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">地址：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.address || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">联系人：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.contact_person || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">电话：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.phone || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">银行账户：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.bank_account || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">税号：</span>
+                          <span className="text-gray-900">{contractMeta?.buyer?.tax_id || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 卖家信息 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium mb-2 text-gray-800">卖家信息</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <span className="font-medium text-gray-700">名称：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.name || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">地址：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.address || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">联系人：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.contact_person || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">电话：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.phone || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">银行账户：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.bank_account || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">税号：</span>
+                          <span className="text-gray-900">{contractMeta?.seller?.tax_id || 'N/A'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -611,6 +713,26 @@ const ContractSearch = () => {
                                 className="border rounded p-3 bg-gray-50 overflow-x-auto"
                                 dangerouslySetInnerHTML={{ __html: cleanTableHtml }}
                               />
+                              <style jsx>{`
+                                table {
+                                  width: 100%;
+                                  border-collapse: collapse;
+                                }
+                                table th {
+                                  font-weight: bold;
+                                  background-color: #f8f9fa;
+                                  padding: 8px;
+                                  text-align: left;
+                                  border: 1px solid #dee2e6;
+                                }
+                                table td {
+                                  padding: 8px;
+                                  border: 1px solid #dee2e6;
+                                }
+                                table tr:nth-child(even) {
+                                  background-color: #f8f9fa;
+                                }
+                              `}</style>
                             </div>
                           );
                         })}
