@@ -738,7 +738,7 @@ const ContractSearch = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-sm text-gray-600">税号：</span>
+                          <span className="text-sm text-gray-600">账号：</span>
                           <span className="text-sm font-medium text-gray-900 ml-1">
                             {contractMeta?.buyer?.tax_id || "N/A"}
                           </span>
@@ -787,7 +787,7 @@ const ContractSearch = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-sm text-gray-600">税号：</span>
+                          <span className="text-sm text-gray-600">账号：</span>
                           <span className="text-sm font-medium text-gray-900 ml-1">
                             {contractMeta?.seller?.tax_id || "N/A"}
                           </span>
