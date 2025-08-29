@@ -84,7 +84,7 @@ const CollapsiblePanel = ({ title, openStatus, children }) => {
 
       <div
         className={`transition-all duration-200 overflow-hidden ${
-          isOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="p-4 bg-white">{children}</div>
@@ -489,369 +489,9 @@ const ContractSearch = () => {
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-4 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
-          {/* 中间结果展示区域 */}
-          {contracts.length > 0 &&
-            contracts.map((contract, i) => {
-              // 将合同数据转换为 JavaScript 对象
-              const contractObj =
-                typeof contract === "string" ? JSON.parse(contract) : contract;
-
-              // 解析 contract_meta 字符串为对象
-              let contractMeta = {};
-              if (
-                contractObj?.contract_meta &&
-                typeof contractObj.contract_meta === "string"
-              ) {
-                try {
-                  // 替换单引号为双引号，并处理 None 为 null
-                  const fixedMetaString = contractObj.contract_meta
-                    .replace(/'/g, '"')
-                    .replace(/None/g, "null")
-                    .replace(/True/g, "true")
-                    .replace(/False/g, "false");
-                  contractMeta = JSON.parse(fixedMetaString);
-                } catch (e) {
-                  console.error("Failed to parse contract_meta:", e);
-                }
-              }
-
-              // 解析 equipment_table 字符串为数组
-              let equipmentTableArray = [];
-              if (
-                contractObj?.equipment_table &&
-                typeof contractObj.equipment_table === "string"
-              ) {
-                try {
-                  // 首先尝试直接解析为 JSON
-                  equipmentTableArray = JSON.parse(contractObj.equipment_table);
-                } catch (e) {
-                  try {
-                    // 如果失败，使用更精确的替换方法
-                    let tableString = contractObj.equipment_table;
-
-                    // 移除外层的方括号
-                    if (
-                      tableString.startsWith("[") &&
-                      tableString.endsWith("]")
-                    ) {
-                      tableString = tableString.substring(
-                        1,
-                        tableString.length - 1
-                      );
-                    }
-
-                    // 按逗号分割，但保留引号内的内容
-                    const items = [];
-                    let currentItem = "";
-                    let inQuotes = false;
-                    let escapeNext = false;
-
-                    for (let i = 0; i < tableString.length; i++) {
-                      const char = tableString[i];
-
-                      if (escapeNext) {
-                        currentItem += char;
-                        escapeNext = false;
-                      } else if (char === "\\") {
-                        escapeNext = true;
-                      } else if (char === "'" && !inQuotes) {
-                        inQuotes = true;
-                      } else if (char === "'" && inQuotes) {
-                        inQuotes = false;
-                        items.push(currentItem);
-                        currentItem = "";
-                        // 跳过逗号和空格
-                        while (
-                          i < tableString.length &&
-                          (tableString[i + 1] === "," ||
-                            tableString[i + 1] === " ")
-                        ) {
-                          i++;
-                        }
-                      } else if (inQuotes) {
-                        currentItem += char;
-                      }
-                    }
-
-                    // 如果还有未处理的内容，添加到数组
-                    if (currentItem) {
-                      items.push(currentItem);
-                    }
-
-                    equipmentTableArray = items;
-                  } catch (e2) {
-                    console.error(
-                      "Failed to parse equipment_table with custom parser:",
-                      e2
-                    );
-                    // 如果仍然失败，将整个字符串作为数组的单个元素
-                    equipmentTableArray = [contractObj.equipment_table];
-                  }
-                }
-              }
-
-              return (
-                <div
-                  key={i}
-                  className="mb-6 p-4 border rounded-lg bg-white shadow-sm"
-                >
-                  {/* 合同基本信息 */}
-                  <div className="mb-4 bg-white border border-gray-200 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
-                      合同基本信息
-                    </h3>
-
-                    {/* 基本信息 */}
-                    <div className="mb-4 bg-blue-50 rounded-lg p-3 border-l-4 border-blue-400">
-                      <h4 className="text-md font-medium mb-2 text-blue-800">
-                        基本信息
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            买方合同编号：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer_contract_number || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            卖方合同编号：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller_contract_number || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            合同类型：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.contract_type || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            项目名称：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.project_name || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            子项目名称：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.sub_project_name || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            签约日期：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.signing_date || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 金额信息 */}
-                    <div className="mb-4 bg-green-50 rounded-lg p-3 border-l-4 border-green-400">
-                      <h4 className="text-md font-medium mb-2 text-green-800">
-                        金额信息
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            总金额：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.total_amount || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            总金额（大写）：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.total_amount_str || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            不含税金额：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.tax_excluded_amount || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">税额：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.tax_amount || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 买家信息 */}
-                    <div className="mb-4 bg-purple-50 rounded-lg p-3 border-l-4 border-purple-400">
-                      <h4 className="text-md font-medium mb-2 text-purple-800">
-                        买家信息
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-sm text-gray-600">名称：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.name || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">地址：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.address || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            联系人：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.contact_person || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">电话：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.phone || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            银行账户：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.bank_account || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">账号：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.buyer?.tax_id || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 卖家信息 */}
-                    <div className="bg-orange-50 rounded-lg p-3 border-l-4 border-orange-400">
-                      <h4 className="text-md font-medium mb-2 text-orange-800">
-                        卖家信息
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-sm text-gray-600">名称：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.name || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">地址：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.address || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            联系人：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.contact_person || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">电话：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.phone || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            银行账户：
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.bank_account || "N/A"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">账号：</span>
-                          <span className="text-sm font-medium text-gray-900 ml-1">
-                            {contractMeta?.seller?.tax_id || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 设备表格 */}
-                  {equipmentTableArray.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">设备表格</h3>
-                      <div className="space-y-4">
-                        {equipmentTableArray.map((tableHtml, tableIndex) => {
-                          // 移除首尾的单引号
-                          const cleanTableHtml =
-                            typeof tableHtml === "string"
-                              ? tableHtml.replace(/^'|'$/g, "")
-                              : tableHtml;
-
-                          return (
-                            <div key={tableIndex} className="mb-4">
-                              <div className="text-sm font-medium text-gray-600 mb-2">
-                                表格 {tableIndex + 1}
-                              </div>
-                              <div
-                                className="border rounded p-3 bg-gray-50 overflow-x-auto"
-                                dangerouslySetInnerHTML={{
-                                  __html: cleanTableHtml,
-                                }}
-                              />
-                              <style jsx>{`
-                                table {
-                                  width: 100%;
-                                  border-collapse: collapse;
-                                }
-                                table th {
-                                  font-weight: bold;
-                                  background-color: #f8f9fa;
-                                  padding: 8px;
-                                  text-align: left;
-                                  border: 1px solid #dee2e6;
-                                }
-                                table td {
-                                  padding: 8px;
-                                  border: 1px solid #dee2e6;
-                                }
-                                table tr:nth-child(even) {
-                                  background-color: #f8f9fa;
-                                }
-                              `}</style>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
-            <div className="mt-4">
+            <div className="mb-4">
               <div className="border rounded-lg p-4 bg-gray-50 min-h-[100px]">
                 {streamMessage ? (
                   <RenderMarkdown content={streamMessage} />
@@ -863,6 +503,368 @@ const ContractSearch = () => {
               </div>
             </div>
           )}
+
+          {/* 中间结果展示区域 - 默认折叠 */}
+          <CollapsiblePanel title="合同详细信息" openStatus={openStatus}>
+            {contracts.length > 0 &&
+              contracts.map((contract, i) => {
+                // 将合同数据转换为 JavaScript 对象
+                const contractObj =
+                  typeof contract === "string" ? JSON.parse(contract) : contract;
+
+                // 解析 contract_meta 字符串为对象
+                let contractMeta = {};
+                if (
+                  contractObj?.contract_meta &&
+                  typeof contractObj.contract_meta === "string"
+                ) {
+                  try {
+                    // 替换单引号为双引号，并处理 None 为 null
+                    const fixedMetaString = contractObj.contract_meta
+                      .replace(/'/g, '"')
+                      .replace(/None/g, "null")
+                      .replace(/True/g, "true")
+                      .replace(/False/g, "false");
+                    contractMeta = JSON.parse(fixedMetaString);
+                  } catch (e) {
+                    console.error("Failed to parse contract_meta:", e);
+                  }
+                }
+
+                // 解析 equipment_table 字符串为数组
+                let equipmentTableArray = [];
+                if (
+                  contractObj?.equipment_table &&
+                  typeof contractObj.equipment_table === "string"
+                ) {
+                  try {
+                    // 首先尝试直接解析为 JSON
+                    equipmentTableArray = JSON.parse(contractObj.equipment_table);
+                  } catch (e) {
+                    try {
+                      // 如果失败，使用更精确的替换方法
+                      let tableString = contractObj.equipment_table;
+
+                      // 移除外层的方括号
+                      if (
+                        tableString.startsWith("[") &&
+                        tableString.endsWith("]")
+                      ) {
+                        tableString = tableString.substring(
+                          1,
+                          tableString.length - 1
+                        );
+                      }
+
+                      // 按逗号分割，但保留引号内的内容
+                      const items = [];
+                      let currentItem = "";
+                      let inQuotes = false;
+                      let escapeNext = false;
+
+                      for (let i = 0; i < tableString.length; i++) {
+                        const char = tableString[i];
+
+                        if (escapeNext) {
+                          currentItem += char;
+                          escapeNext = false;
+                        } else if (char === "\\") {
+                          escapeNext = true;
+                        } else if (char === "'" && !inQuotes) {
+                          inQuotes = true;
+                        } else if (char === "'" && inQuotes) {
+                          inQuotes = false;
+                          items.push(currentItem);
+                          currentItem = "";
+                          // 跳过逗号和空格
+                          while (
+                            i < tableString.length &&
+                            (tableString[i + 1] === "," ||
+                              tableString[i + 1] === " ")
+                          ) {
+                            i++;
+                          }
+                        } else if (inQuotes) {
+                          currentItem += char;
+                        }
+                      }
+
+                      // 如果还有未处理的内容，添加到数组
+                      if (currentItem) {
+                        items.push(currentItem);
+                      }
+
+                      equipmentTableArray = items;
+                    } catch (e2) {
+                      console.error(
+                        "Failed to parse equipment_table with custom parser:",
+                        e2
+                      );
+                      // 如果仍然失败，将整个字符串作为数组的单个元素
+                      equipmentTableArray = [contractObj.equipment_table];
+                    }
+                  }
+                }
+
+                return (
+                  <div
+                    key={i}
+                    className="mb-6 p-4 border rounded-lg bg-white shadow-sm"
+                  >
+                    {/* 合同基本信息 */}
+                    <div className="mb-4 bg-white border border-gray-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
+                        合同基本信息
+                      </h3>
+
+                      {/* 基本信息 */}
+                      <div className="mb-4 bg-blue-50 rounded-lg p-3 border-l-4 border-blue-400">
+                        <h4 className="text-md font-medium mb-2 text-blue-800">
+                          基本信息
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              买方合同编号：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer_contract_number || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              卖方合同编号：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller_contract_number || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              合同类型：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.contract_type || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              项目名称：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.project_name || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              子项目名称：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.sub_project_name || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              签约日期：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.signing_date || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 金额信息 */}
+                      <div className="mb-4 bg-green-50 rounded-lg p-3 border-l-4 border-green-400">
+                        <h4 className="text-md font-medium mb-2 text-green-800">
+                          金额信息
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              总金额：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.total_amount || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              总金额（大写）：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.total_amount_str || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              不含税金额：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.tax_excluded_amount || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">税额：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.tax_amount || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 买家信息 */}
+                      <div className="mb-4 bg-purple-50 rounded-lg p-3 border-l-4 border-purple-400">
+                        <h4 className="text-md font-medium mb-2 text-purple-800">
+                          买家信息
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-sm text-gray-600">名称：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.name || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">地址：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.address || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              联系人：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.contact_person || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">电话：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.phone || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              银行账户：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.bank_account || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">账号：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.buyer?.tax_id || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 卖家信息 */}
+                      <div className="bg-orange-50 rounded-lg p-3 border-l-4 border-orange-400">
+                        <h4 className="text-md font-medium mb-2 text-orange-800">
+                          卖家信息
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-sm text-gray-600">名称：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.name || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">地址：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.address || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              联系人：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.contact_person || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">电话：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.phone || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">
+                              银行账户：
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.bank_account || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">账号：</span>
+                            <span className="text-sm font-medium text-gray-900 ml-1">
+                              {contractMeta?.seller?.tax_id || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 设备表格 */}
+                    {equipmentTableArray.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">设备表格</h3>
+                        <div className="space-y-4">
+                          {equipmentTableArray.map((tableHtml, tableIndex) => {
+                            // 移除首尾的单引号
+                            const cleanTableHtml =
+                              typeof tableHtml === "string"
+                                ? tableHtml.replace(/^'|'$/g, "")
+                                : tableHtml;
+
+                            return (
+                              <div key={tableIndex} className="mb-4">
+                                <div className="text-sm font-medium text-gray-600 mb-2">
+                                  表格 {tableIndex + 1}
+                                </div>
+                                <div
+                                  className="border rounded p-3 bg-gray-50 overflow-x-auto"
+                                  dangerouslySetInnerHTML={{
+                                    __html: cleanTableHtml,
+                                  }}
+                                />
+                                <style jsx>{`
+                                  table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                  }
+                                  table th {
+                                    font-weight: bold;
+                                    background-color: #f8f9fa;
+                                    padding: 8px;
+                                    text-align: left;
+                                    border: 1px solid #dee2e6;
+                                  }
+                                  table td {
+                                    padding: 8px;
+                                    border: 1px solid #dee2e6;
+                                  }
+                                  table tr:nth-child(even) {
+                                    background-color: #f8f9fa;
+                                  }
+                                `}</style>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </CollapsiblePanel>
         </div>
         {/* 结果对话展示区域 */}
         <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-6">
