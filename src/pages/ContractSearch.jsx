@@ -50,35 +50,6 @@ const rolesAsObject = {
   },
 };
 
-// 搜索结果卡片组件
-const ContractSearchCard = memo(({ contract }) => {
-  return (
-    <div className="border rounded-lg p-4 mb-4 overflow-y-auto bg-white shadow hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center mb-2">
-        <FileTextOutlined className="text-blue-500 mr-2" />
-        <h4 className="text-lg font-semibold text-gray-800">
-          {contract.project_name}
-        </h4>
-      </div>
-      <div className="mb-2">
-        <Tag color="blue" className="mr-2">
-          合同号: {contract.contact_no}
-        </Tag>
-        <Tag color="green">项目: {contract.project_name}</Tag>
-      </div>
-      <Typography className="text-gray-600">
-        <strong>元数据:</strong> {contract.contract_meta?.substring(0, 200)}...
-      </Typography>
-      <div className="mt-2">
-        <Typography className="text-gray-600">
-          <strong>设备列表:</strong>{" "}
-          {contract.equipment_table?.substring(0, 200)}...
-        </Typography>
-      </div>
-    </div>
-  );
-});
-
 const CollapsiblePanel = ({ title, openStatus, children }) => {
   const [isOpen, setIsOpen] = useState(openStatus);
 
@@ -122,136 +93,12 @@ const CollapsiblePanel = ({ title, openStatus, children }) => {
   );
 };
 
-const JsonRender = memo(({ data }) => {
-  return (
-    <ReactJson
-      name={false}
-      displayDataTypes={false}
-      src={data}
-      indentWidth={2}
-      collapsed={2}
-      sortKeys
-    />
-  );
-});
-
-function renderStep(step) {
-  switch (step.node) {
-    case "generate_search_words":
-      return (
-        <div className="mt-3">
-          <div className="mb-2">
-            <Tag color="blue" icon={<SearchOutlined />}>
-              项目关键词
-            </Tag>
-            {step.data?.project_key_words?.map((word, index) => (
-              <Tag key={index} className="ml-1">
-                {word}
-              </Tag>
-            ))}
-          </div>
-          <div>
-            <Tag color="green" icon={<SearchOutlined />}>
-              设备关键词
-            </Tag>
-            {step.data?.equipments_key_words?.map((word, index) => (
-              <Tag key={index} className="ml-1">
-                {word}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      );
-    case "vector_search":
-      return (
-        <div className="mt-3">
-          <div className="mb-2">
-            <Tag color="purple" icon={<SearchOutlined />}>
-              向量搜索结果
-            </Tag>
-            <span className="text-sm text-gray-600 ml-2">
-              {step.data?.length} 条合同记录
-            </span>
-          </div>
-          {step.data?.slice(0, 3).map((contract, index) => (
-            <div key={index} className="mb-2">
-              <Tag color="blue">{contract.contact_no}</Tag>
-              <span className="ml-2">{contract.project_name}</span>
-            </div>
-          ))}
-          {step.data?.length > 3 && (
-            <div className="text-gray-500 text-sm">
-              ...等 {step.data.length} 条记录
-            </div>
-          )}
-        </div>
-      );
-    case "keyword_search":
-      return (
-        <div className="mt-3">
-          <div className="mb-2">
-            <Tag color="orange" icon={<SearchOutlined />}>
-              关键词搜索结果
-            </Tag>
-            <span className="text-sm text-gray-600 ml-2">
-              {step.data?.length} 条合同记录
-            </span>
-          </div>
-          {step.data?.slice(0, 3).map((contract, index) => (
-            <div key={index} className="mb-2">
-              <Tag color="blue">{contract.contact_no}</Tag>
-              <span className="ml-2">{contract.project_name}</span>
-            </div>
-          ))}
-          {step.data?.length > 3 && (
-            <div className="text-gray-500 text-sm">
-              ...等 {step.data.length} 条记录
-            </div>
-          )}
-        </div>
-      );
-    case "filter_contracts":
-      return (
-        <div className="mt-3">
-          <div className="mb-2">
-            <Tag color="cyan" icon={<FilterOutlined />}>
-              过滤后合同
-            </Tag>
-            <span className="text-sm text-gray-600 ml-2">
-              {step.data?.length} 条有效合同
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {step.data?.slice(0, 4).map((contract, index) => (
-              <ContractSearchCard key={index} contract={contract} />
-            ))}
-          </div>
-        </div>
-      );
-    default:
-      return (
-        <div className="font-mono max-h-50 overflow-y-auto">
-          <JsonRender data={step.data} />
-        </div>
-      );
-  }
-}
-
-//设置步骤节点的渲染内容
-function getThoughtChainContent(step) {
-  if (step.status === "pending") {
-    return <>{step.node} 节点正在执行...</>;
-  } else {
-    return renderStep(step);
-  }
-}
-
 // 合同搜索主组件
 const ContractSearch = () => {
   const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
-  const [steps, setSteps] = useState([]); //步骤，keys:node,data
+  const [contracts, setContracts] = useState([]); // 选中的合同列表
   const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
@@ -342,7 +189,6 @@ const ContractSearch = () => {
     // 清空当前恢复的对话的uuid
     setCurrentConversationId(null);
 
-    setSteps([]);
     setMessages([]);
     setStreamMessage("");
     setIsStreaming(false);
@@ -360,7 +206,6 @@ const ContractSearch = () => {
     setCurrentConversationId(conversation.id);
 
     // 清空当前状态
-    setSteps([]);
     setIsStreaming(false);
     setCurrentNode("");
     setError(null);
@@ -384,7 +229,6 @@ const ContractSearch = () => {
 
     // 重置状态
     setError(null);
-    setSteps([]);
     setOpenStatus(true);
     setMessages((prev) => {
       return [
@@ -486,6 +330,10 @@ const ContractSearch = () => {
   const handleCustomEvent = (parsed) => {
     console.log("Custom event from node:", parsed);
     if (parsed.node === "generate_response") {
+      //更新合同信息
+      if (parsed.data.type === "update_info") {
+        setContracts(parsed.data.data);
+      }
       // 最后一个节点，回复节点
       if (parsed.data.type === "final_response") {
         console.log("更新最后消息：", parsed.data.data.response);
@@ -495,18 +343,6 @@ const ContractSearch = () => {
             { role: "assistant", content: parsed.data.data.response },
           ];
         });
-        // setSteps((prev) => {
-        //   let temp_arr = prev.slice(0, -1);
-        //   return [
-        //     ...temp_arr, // 排除最后一个元素
-        //     {
-        //       id: Date.now(),
-        //       node: parsed.data.node,
-        //       data: parsed.data.data.data,
-        //       status: "success",
-        //     },
-        //   ];
-        // });
       }
     }
 
@@ -574,22 +410,6 @@ const ContractSearch = () => {
         let temp_arr = prev.slice(0, -1);
         return [...temp_arr, { role: "assistant", content: streamMessage }];
       });
-    }
-  };
-
-  // 获取节点图标
-  const getNodeIcon = (nodeName) => {
-    switch (nodeName) {
-      case "generate_search_words":
-        return <SearchOutlined className="text-blue-500" />;
-      case "vector_search":
-        return <FileTextOutlined className="text-purple-500" />;
-      case "keyword_search":
-        return <FileTextOutlined className="text-orange-500" />;
-      case "filter_contracts":
-        return <FilterOutlined className="text-green-500" />;
-      default:
-        return <RobotOutlined />;
     }
   };
 
@@ -669,40 +489,138 @@ const ContractSearch = () => {
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-4 h-10/12">
         <div className="flex-2 w-2/3 h-full overflow-y-auto bg-white rounded-lg shadow p-4">
-          {/* 步骤展示区域,暂时不显示 */}
-          {steps.length > 0 && false && (
-            <CollapsiblePanel title="合同搜索流程" openStatus={openStatus}>
-              <>
-                <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
-                  {isStreaming && currentNode && (
-                    <span className="ml-2 text-sm text-green-500 animate-pulse">
-                      {currentNode} 节点正在执行...
-                    </span>
+          {/* 中间结果展示区域 */}
+          {contracts.length > 0 &&
+            contracts.map((contract, i) => {
+              // 将合同数据转换为 JavaScript 对象
+              const contractObj = typeof contract === 'string' ? JSON.parse(contract) : contract;
+              
+              // 解析 contract_meta 字符串为对象
+              let contractMeta = {};
+              if (contractObj?.contract_meta && typeof contractObj.contract_meta === 'string') {
+                try {
+                  // 替换单引号为双引号，并处理 None 为 null
+                  const fixedMetaString = contractObj.contract_meta
+                    .replace(/'/g, '"')
+                    .replace(/None/g, 'null')
+                    .replace(/True/g, 'true')
+                    .replace(/False/g, 'false');
+                  contractMeta = JSON.parse(fixedMetaString);
+                } catch (e) {
+                  console.error('Failed to parse contract_meta:', e);
+                }
+              }
+              
+              // 解析 equipment_table 字符串为数组
+              let equipmentTableArray = [];
+              if (contractObj?.equipment_table && typeof contractObj.equipment_table === 'string') {
+                try {
+                  // 首先尝试直接解析为 JSON
+                  equipmentTableArray = JSON.parse(contractObj.equipment_table);
+                } catch (e) {
+                  try {
+                    // 如果失败，使用更精确的替换方法
+                    let tableString = contractObj.equipment_table;
+                    
+                    // 移除外层的方括号
+                    if (tableString.startsWith('[') && tableString.endsWith(']')) {
+                      tableString = tableString.substring(1, tableString.length - 1);
+                    }
+                    
+                    // 按逗号分割，但保留引号内的内容
+                    const items = [];
+                    let currentItem = '';
+                    let inQuotes = false;
+                    let escapeNext = false;
+                    
+                    for (let i = 0; i < tableString.length; i++) {
+                      const char = tableString[i];
+                      
+                      if (escapeNext) {
+                        currentItem += char;
+                        escapeNext = false;
+                      } else if (char === '\\') {
+                        escapeNext = true;
+                      } else if (char === '\'' && !inQuotes) {
+                        inQuotes = true;
+                      } else if (char === '\'' && inQuotes) {
+                        inQuotes = false;
+                        items.push(currentItem);
+                        currentItem = '';
+                        // 跳过逗号和空格
+                        while (i < tableString.length && (tableString[i + 1] === ',' || tableString[i + 1] === ' ')) {
+                          i++;
+                        }
+                      } else if (inQuotes) {
+                        currentItem += char;
+                      }
+                    }
+                    
+                    // 如果还有未处理的内容，添加到数组
+                    if (currentItem) {
+                      items.push(currentItem);
+                    }
+                    
+                    equipmentTableArray = items;
+                  } catch (e2) {
+                    console.error('Failed to parse equipment_table with custom parser:', e2);
+                    // 如果仍然失败，将整个字符串作为数组的单个元素
+                    equipmentTableArray = [contractObj.equipment_table];
+                  }
+                }
+              }
+              
+              return (
+                <div key={i} className="mb-6 p-4 border rounded-lg bg-white shadow-sm">
+                  {/* 合同基本信息 */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">合同基本信息</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <span className="font-medium text-gray-700">合同编号：</span>
+                        <span className="text-gray-900">{contractMeta?.buyer_contract_number || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">项目名称：</span>
+                        <span className="text-gray-900">{contractMeta?.project_name || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">子项目名称：</span>
+                        <span className="text-gray-900">{contractMeta?.sub_project_name || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 设备表格 */}
+                  {equipmentTableArray.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">设备表格</h3>
+                      <div className="space-y-4">
+                        {equipmentTableArray.map((tableHtml, tableIndex) => {
+                          // 移除首尾的单引号
+                          const cleanTableHtml = typeof tableHtml === 'string'
+                            ? tableHtml.replace(/^'|'$/g, '')
+                            : tableHtml;
+                          
+                          return (
+                            <div key={tableIndex} className="mb-4">
+                              <div className="text-sm font-medium text-gray-600 mb-2">
+                                表格 {tableIndex + 1}
+                              </div>
+                              <div
+                                className="border rounded p-3 bg-gray-50 overflow-x-auto"
+                                dangerouslySetInnerHTML={{ __html: cleanTableHtml }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                </h2>
-                <ThoughtChain
-                  items={steps.map((step) => {
-                    return {
-                      title: (
-                        <div className="flex items-center">
-                          {getNodeIcon(step.node)}
-                          <span className="ml-2">{step.node}</span>
-                          {step.status === "pending" && (
-                            <span className="ml-2 text-xs text-gray-500">
-                              (处理中...)
-                            </span>
-                          )}
-                        </div>
-                      ),
-                      status: step.status,
-                      content: getThoughtChainContent(step),
-                    };
-                  })}
-                  collapsible={true}
-                />
-              </>
-            </CollapsiblePanel>
-          )}
+                </div>
+              );
+            })}
+
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
             <div className="mt-4">
