@@ -84,7 +84,7 @@ const CollapsiblePanel = ({ title, openStatus, children }) => {
 
       <div
         className={`transition-all duration-200 overflow-hidden ${
-          isOpen ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-none opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="p-4 bg-white">{children}</div>
