@@ -506,11 +506,14 @@ const ContractSearch = () => {
 
           {/* 中间结果展示区域 - 默认折叠 */}
           <CollapsiblePanel title="合同详细信息" openStatus={openStatus}>
-            {contracts.length > 0 &&
+            {contracts &&
+              contracts.length > 0 &&
               contracts.map((contract, i) => {
                 // 将合同数据转换为 JavaScript 对象
                 const contractObj =
-                  typeof contract === "string" ? JSON.parse(contract) : contract;
+                  typeof contract === "string"
+                    ? JSON.parse(contract)
+                    : contract;
 
                 // 解析 contract_meta 字符串为对象
                 let contractMeta = {};
@@ -539,7 +542,9 @@ const ContractSearch = () => {
                 ) {
                   try {
                     // 首先尝试直接解析为 JSON
-                    equipmentTableArray = JSON.parse(contractObj.equipment_table);
+                    equipmentTableArray = JSON.parse(
+                      contractObj.equipment_table
+                    );
                   } catch (e) {
                     try {
                       // 如果失败，使用更精确的替换方法
@@ -705,7 +710,9 @@ const ContractSearch = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">税额：</span>
+                            <span className="text-sm text-gray-600">
+                              税额：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.tax_amount || "N/A"}
                             </span>
@@ -720,13 +727,17 @@ const ContractSearch = () => {
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
-                            <span className="text-sm text-gray-600">名称：</span>
+                            <span className="text-sm text-gray-600">
+                              名称：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.buyer?.name || "N/A"}
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">地址：</span>
+                            <span className="text-sm text-gray-600">
+                              地址：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.buyer?.address || "N/A"}
                             </span>
@@ -740,7 +751,9 @@ const ContractSearch = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">电话：</span>
+                            <span className="text-sm text-gray-600">
+                              电话：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.buyer?.phone || "N/A"}
                             </span>
@@ -754,7 +767,9 @@ const ContractSearch = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">账号：</span>
+                            <span className="text-sm text-gray-600">
+                              账号：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.buyer?.tax_id || "N/A"}
                             </span>
@@ -769,13 +784,17 @@ const ContractSearch = () => {
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
-                            <span className="text-sm text-gray-600">名称：</span>
+                            <span className="text-sm text-gray-600">
+                              名称：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.seller?.name || "N/A"}
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">地址：</span>
+                            <span className="text-sm text-gray-600">
+                              地址：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.seller?.address || "N/A"}
                             </span>
@@ -789,7 +808,9 @@ const ContractSearch = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">电话：</span>
+                            <span className="text-sm text-gray-600">
+                              电话：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.seller?.phone || "N/A"}
                             </span>
@@ -803,7 +824,9 @@ const ContractSearch = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">账号：</span>
+                            <span className="text-sm text-gray-600">
+                              账号：
+                            </span>
                             <span className="text-sm font-medium text-gray-900 ml-1">
                               {contractMeta?.seller?.tax_id || "N/A"}
                             </span>
@@ -813,7 +836,7 @@ const ContractSearch = () => {
                     </div>
 
                     {/* 设备表格 */}
-                    {equipmentTableArray.length > 0 && (
+                    {equipmentTableArray && equipmentTableArray.length > 0 && (
                       <div>
                         <h3 className="text-lg font-semibold mb-2">设备表格</h3>
                         <div className="space-y-4">
